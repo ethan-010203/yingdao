@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "@/components/ui/toaster";
 
@@ -16,11 +16,7 @@ export interface Settings {
     auto_update: boolean;
 }
 
-interface Config {
-    accounts: any[]; // The raw structure from Rust has different field names maybe? Checking commands.rs... it matches AccountConfig.
-    // Rust: { name, username, password }
-    settings: Settings;
-}
+// Config shape matches Rust backend: { accounts: AccountConfig[], settings: Settings }
 
 interface ConfigContextType {
     settings: Settings;
