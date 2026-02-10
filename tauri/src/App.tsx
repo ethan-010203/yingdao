@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Layout } from "@/components/layout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { SettingsPage } from "@/components/SettingsPage";
+import { useConfig } from "@/contexts/ConfigContext";
 import {
   FolderSync,
   Users,
@@ -29,6 +31,10 @@ import {
 } from "lucide-react";
 
 // 类型定义
+// 类型定义
+// Account is now imported from ConfigContext or defined there. 
+// But strictly speaking, App.tsx defines its own Account interface. 
+// Let's use the one from ConfigContext or keep it compatible.
 interface Account {
   id: string;
   name: string;
@@ -58,25 +64,29 @@ interface MigrateResult {
   message: string;
 }
 
+
 type Theme = "light" | "dark" | "system";
-type Page = "home" | "migrate" | "accounts" | "local" | "cloud";
+
+type Page = "home" | "migrate" | "accounts" | "local" | "cloud" | "settings";
 type LocalStep = "list" | "target" | "migrating" | "result";
 type CloudStep = "source" | "list" | "target" | "migrating" | "result";
 
 function App() {
   // Auth
   const { user, signOut, username, isAdmin } = useAuth();
+  const { accounts, settings, saveAccounts, updateSettings } = useConfig();
 
-  // 主题
-  const [theme, setTheme] = useState<Theme>("system");
+  const handleUpdateSettings = (newSettings: Partial<typeof settings>) => {
+    updateSettings(newSettings);
+  };
+
 
   // 页面导航
   const [page, setPage] = useState<Page>("home");
   const [localStep, setLocalStep] = useState<LocalStep>("list");
   const [cloudStep, setCloudStep] = useState<CloudStep>("source");
 
-  // 账号管理
-  const [accounts, setAccounts] = useState<Account[]>([]);
+  // 账号管理 - editing state remains local
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
 
@@ -115,63 +125,20 @@ function App() {
   const [reLoginAccount, setReLoginAccount] = useState<Account | null>(null);
   const [reLoginOpen, setReLoginOpen] = useState(false);
 
-  // 初始化
-  useEffect(() => {
-    loadAccounts();
-  }, []);
+  // 初始化 - Config is loaded by Context now
+  // useEffect(() => {
+  //   loadConfig();
+  // }, []);
 
-  // 主题
-  useEffect(() => {
-    const root = document.documentElement;
-    root.classList.remove("light", "dark");
-    if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-      root.classList.add(systemTheme);
-    } else {
-      root.classList.add(theme);
-    }
-  }, [theme]);
+  // 主题 handling is done in ConfigContext
 
-  // 加载账号
-  const loadAccounts = async () => {
-    try {
-      const config: { accounts: any[] } = await invoke("load_config");
-      const accs = config.accounts
-        .filter((a: any) => a.username)
-        .map((a: any, idx: number) => ({
-          id: `acc_${idx}_${Date.now()}`,
-          name: a.name || `账号${idx + 1}`,
-          username: a.username,
-          password: a.password,
-        }));
-      setAccounts(accs);
-    } catch (e) {
-      console.error("加载账号失败:", e);
-    }
-  };
-
-  // 保存账号
-  const saveAccounts = async (accs: Account[]) => {
-    try {
-      await invoke("save_config", {
-        config: {
-          accounts: accs.map(a => ({
-            name: a.name,
-            username: a.username,
-            password: a.password,
-          }))
-        }
-      });
-    } catch (e) {
-      console.error("保存账号失败:", e);
-    }
-  };
+  // Helper to save accounts via context
+  // const saveAccounts = ... already from context
 
   const deleteAccount = async (id: string) => {
     const acc = accounts.find(a => a.id === id);
     const newAccounts = accounts.filter(a => a.id !== id);
-    setAccounts(newAccounts);
-    saveAccounts(newAccounts);
+    await saveAccounts(newAccounts); // Context method
     toast.success(`账号 "${acc?.name || '未命名'}" 已删除`);
     // 记录操作日志
     if (user?.id && acc) {
@@ -184,8 +151,7 @@ function App() {
       const newAccounts = accounts.map(a =>
         a.id === editingAccount.id ? { ...a, ...data } : a
       );
-      setAccounts(newAccounts);
-      saveAccounts(newAccounts);
+      await saveAccounts(newAccounts);
       toast.success(`账号 "${data.name}" 已更新`);
       // 记录操作日志
       if (user?.id) {
@@ -197,8 +163,7 @@ function App() {
         ...data,
       };
       const newAccounts = [...accounts, newAcc];
-      setAccounts(newAccounts);
-      saveAccounts(newAccounts);
+      await saveAccounts(newAccounts);
       toast.success(`账号 "${data.name}" 添加成功`);
       // 记录操作日志
       if (user?.id) {
@@ -207,6 +172,7 @@ function App() {
     }
     setEditingAccount(null);
   };
+
 
   const openAccountDetail = (acc: Account) => {
     setDetailAccount(acc);
@@ -218,12 +184,11 @@ function App() {
     setReLoginOpen(true);
   };
 
-  const updateAccountPassword = (accountId: string, newPassword: string) => {
+  const updateAccountPassword = async (accountId: string, newPassword: string) => {
     const newAccounts = accounts.map(a =>
       a.id === accountId ? { ...a, password: newPassword } : a
     );
-    setAccounts(newAccounts);
-    saveAccounts(newAccounts);
+    await saveAccounts(newAccounts);
   };
 
   const getAccount = (id: string) => accounts.find(a => a.id === id);
@@ -480,12 +445,12 @@ function App() {
     setPageSize: (s: number) => void
   ) => (
     <div className="flex items-center justify-between py-4">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground/70">
         <span>每页</span>
         <select
           value={pageSize}
           onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}
-          className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+          className="h-8 rounded-xl border-0 bg-muted/50 px-2.5 text-sm focus:ring-2 focus:ring-ring/30 outline-none transition-all"
         >
           <option value={10}>10</option>
           <option value={20}>20</option>
@@ -493,14 +458,14 @@ function App() {
         </select>
         <span>条</span>
       </div>
-      <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}>
+      <div className="flex items-center gap-1.5">
+        <Button variant="ghost" size="sm" disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)} className="rounded-lg h-8 w-8 p-0">
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <span className="text-sm text-muted-foreground min-w-[60px] text-center">
+        <span className="text-sm text-muted-foreground/70 min-w-[60px] text-center font-medium">
           {currentPage} / {totalPages || 1}
         </span>
-        <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => setPage(currentPage + 1)}>
+        <Button variant="ghost" size="sm" disabled={currentPage >= totalPages} onClick={() => setPage(currentPage + 1)} className="rounded-lg h-8 w-8 p-0">
           <ArrowRight className="h-4 w-4" />
         </Button>
       </div>
@@ -509,9 +474,14 @@ function App() {
 
   // 加载遮罩
   const renderLoading = () => (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
-      <Loader2 className="h-10 w-10 animate-spin text-primary" />
-      <p className="mt-4 text-muted-foreground">{loadingText}</p>
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/70 backdrop-blur-xl">
+      <div className="flex flex-col items-center gap-5 animate-scale-in">
+        <div className="relative">
+          <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl" />
+          <Loader2 className="h-10 w-10 animate-spin text-primary relative" />
+        </div>
+        <p className="text-muted-foreground/80 font-medium">{loadingText}</p>
+      </div>
     </div>
   );
 
@@ -533,21 +503,21 @@ function App() {
             key={acc.id}
             onClick={() => setSelectedId(acc.id)}
             className={cn(
-              "flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all",
+              "flex items-center gap-3 p-4 rounded-2xl cursor-pointer transition-all duration-200",
               selectedId === acc.id
-                ? "border-primary bg-primary/5"
-                : "border-border hover:border-primary/50"
+                ? "bg-primary/8 shadow-sm shadow-primary/10 ring-1 ring-primary/20"
+                : "bg-muted/30 hover:bg-muted/50"
             )}
           >
             <div className={cn(
-              "w-4 h-4 rounded-full border-2 flex items-center justify-center",
-              selectedId === acc.id ? "border-primary" : "border-muted-foreground"
+              "w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors",
+              selectedId === acc.id ? "border-primary" : "border-muted-foreground/40"
             )}>
               {selectedId === acc.id && <div className="w-2 h-2 rounded-full bg-primary" />}
             </div>
             <div className="flex-1">
               <div className="font-medium">{acc.name}</div>
-              <div className="text-sm text-muted-foreground">{acc.username}</div>
+              <div className="text-sm text-muted-foreground/70">{acc.username}</div>
             </div>
           </div>
         ))}
@@ -555,15 +525,15 @@ function App() {
         <div
           onClick={() => setSelectedId("manual")}
           className={cn(
-            "flex items-center gap-3 p-4 rounded-xl border-2 border-dashed cursor-pointer transition-all",
+            "flex items-center gap-3 p-4 rounded-2xl border border-dashed cursor-pointer transition-all duration-200",
             selectedId === "manual"
-              ? "border-primary bg-primary/5"
-              : "border-border hover:border-primary/50"
+              ? "border-primary/40 bg-primary/8"
+              : "border-border/50 hover:border-primary/30 hover:bg-muted/30"
           )}
         >
           <div className={cn(
-            "w-4 h-4 rounded-full border-2 flex items-center justify-center",
-            selectedId === "manual" ? "border-primary" : "border-muted-foreground"
+            "w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors",
+            selectedId === "manual" ? "border-primary" : "border-muted-foreground/40"
           )}>
             {selectedId === "manual" && <div className="w-2 h-2 rounded-full bg-primary" />}
           </div>
@@ -572,7 +542,7 @@ function App() {
       </div>
 
       {selectedId === "manual" && (
-        <div className="grid grid-cols-2 gap-3 p-4 rounded-xl bg-muted/50">
+        <div className="grid grid-cols-2 gap-3 p-4 rounded-2xl bg-muted/30 animate-fade-in">
           <Input
             type="text"
             placeholder="用户名"
@@ -592,41 +562,48 @@ function App() {
 
   // ===== 页面渲染 =====
 
+  // 设置页面
+  const renderSettings = () => (
+    <div className="h-full animate-in fade-in zoom-in-95 duration-300">
+      <SettingsPage />
+    </div>
+  );
+
   // 首页
   const renderHome = () => (
     <div className="max-w-4xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+      <div className="mb-10">
+        <h1 className="text-3xl font-bold text-gradient">
           欢迎使用影刀工具
         </h1>
-        <p className="text-muted-foreground mt-2">选择一个功能开始</p>
+        <p className="text-muted-foreground/70 mt-2">选择一个功能开始</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card
           variant="default"
-          className="group cursor-pointer hover:shadow-lg hover:border-primary/50 transition-all duration-300"
+          className="group cursor-pointer hover:-translate-y-1 hover:scale-[1.02] hover:shadow-lg hover:shadow-black/[0.06] dark:hover:shadow-black/[0.3] transition-all duration-250"
           onClick={() => setPage("migrate")}
         >
-          <CardHeader>
-            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/10 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-              <FolderSync className="h-7 w-7 text-blue-500" />
+          <CardHeader className="p-7">
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-250">
+              <FolderSync className="h-7 w-7 text-primary" />
             </div>
-            <CardTitle>迁移流程</CardTitle>
+            <CardTitle className="text-lg">迁移流程</CardTitle>
             <CardDescription>本地或云端流程迁移到其他账号</CardDescription>
           </CardHeader>
         </Card>
 
         <Card
           variant="default"
-          className="group cursor-pointer hover:shadow-lg hover:border-primary/50 transition-all duration-300"
+          className="group cursor-pointer hover:-translate-y-1 hover:scale-[1.02] hover:shadow-lg hover:shadow-black/[0.06] dark:hover:shadow-black/[0.3] transition-all duration-250"
           onClick={() => setPage("accounts")}
         >
-          <CardHeader>
-            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-600/10 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-              <Users className="h-7 w-7 text-purple-500" />
+          <CardHeader className="p-7">
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-250">
+              <Users className="h-7 w-7 text-primary" />
             </div>
-            <CardTitle>账号管理</CardTitle>
+            <CardTitle className="text-lg">账号管理</CardTitle>
             <CardDescription>
               管理已保存的账号 ({accounts.length})
             </CardDescription>
@@ -639,38 +616,38 @@ function App() {
   // 迁移选择页
   const renderMigrate = () => (
     <div className="max-w-4xl mx-auto">
-      <div className="mb-8">
-        <Button variant="ghost" onClick={() => setPage("home")} className="mb-4 -ml-2">
+      <div className="mb-10">
+        <Button variant="ghost" onClick={() => setPage("home")} className="mb-4 -ml-3 text-muted-foreground/70">
           <ArrowLeft className="h-4 w-4 mr-2" />
           返回首页
         </Button>
-        <h1 className="text-3xl font-bold">迁移流程</h1>
-        <p className="text-muted-foreground mt-1">选择迁移方式</p>
+        <h1 className="text-3xl font-bold text-gradient">迁移流程</h1>
+        <p className="text-muted-foreground/70 mt-1">选择迁移方式</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card
-          className="group cursor-pointer hover:shadow-lg hover:border-primary/50 transition-all"
+          className="group cursor-pointer hover:-translate-y-1 hover:scale-[1.02] hover:shadow-lg hover:shadow-black/[0.06] dark:hover:shadow-black/[0.3] transition-all duration-250"
           onClick={startLocalMigration}
         >
-          <CardHeader>
-            <div className="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center mb-2">
-              <HardDrive className="h-6 w-6 text-blue-500" />
+          <CardHeader className="p-7">
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-250">
+              <HardDrive className="h-7 w-7 text-primary" />
             </div>
-            <CardTitle>本地迁移</CardTitle>
+            <CardTitle className="text-lg">本地迁移</CardTitle>
             <CardDescription>将本地缓存的流程迁移到指定账号</CardDescription>
           </CardHeader>
         </Card>
 
         <Card
-          className="group cursor-pointer hover:shadow-lg hover:border-primary/50 transition-all"
+          className="group cursor-pointer hover:-translate-y-1 hover:scale-[1.02] hover:shadow-lg hover:shadow-black/[0.06] dark:hover:shadow-black/[0.3] transition-all duration-250"
           onClick={startCloudMigration}
         >
-          <CardHeader>
-            <div className="w-12 h-12 rounded-lg bg-purple-500/10 flex items-center justify-center mb-2">
-              <CloudDownload className="h-6 w-6 text-purple-500" />
+          <CardHeader className="p-7">
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-250">
+              <CloudDownload className="h-7 w-7 text-primary" />
             </div>
-            <CardTitle>云端迁移</CardTitle>
+            <CardTitle className="text-lg">云端迁移</CardTitle>
             <CardDescription>从一个账号迁移流程到另一个账号</CardDescription>
           </CardHeader>
         </Card>
@@ -681,13 +658,13 @@ function App() {
   // 账号管理页
   const renderAccounts = () => (
     <div className="max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-10">
         <div>
-          <Button variant="ghost" onClick={() => setPage("home")} className="mb-4 -ml-2">
+          <Button variant="ghost" onClick={() => setPage("home")} className="mb-4 -ml-3 text-muted-foreground/70">
             <ArrowLeft className="h-4 w-4 mr-2" />
             返回首页
           </Button>
-          <h1 className="text-3xl font-bold">账号管理</h1>
+          <h1 className="text-3xl font-bold text-gradient">账号管理</h1>
         </div>
         <Button onClick={() => { setEditingAccount(null); setShowAddForm(true); }}>
           <Plus className="h-4 w-4 mr-2" />
@@ -696,10 +673,12 @@ function App() {
       </div>
 
       {accounts.length === 0 ? (
-        <Card className="text-center py-12">
+        <Card className="text-center py-16">
           <CardContent>
-            <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground mb-4">暂无保存的账号</p>
+            <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-5">
+              <Users className="h-8 w-8 text-muted-foreground/50" />
+            </div>
+            <p className="text-muted-foreground/70 mb-5">暂无保存的账号</p>
             <Button onClick={() => { setEditingAccount(null); setShowAddForm(true); }}>
               添加第一个账号
             </Button>
@@ -710,23 +689,24 @@ function App() {
           {accounts.map(acc => (
             <Card
               key={acc.id}
-              className={cn("transition-all", isAdmin && "cursor-pointer hover:shadow-md")}
+              className={cn("transition-all duration-200", isAdmin && "cursor-pointer hover:-translate-y-0.5 hover:shadow-md hover:shadow-black/[0.06] dark:hover:shadow-black/[0.3]")}
               onClick={() => isAdmin && openAccountDetail(acc)}
             >
-              <CardContent className="flex items-center justify-between p-4">
+              <CardContent className="flex items-center justify-between p-5">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-lg">
-                    👤
+                  <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary">
+                    {acc.name.charAt(0).toUpperCase()}
                   </div>
                   <div>
                     <div className="font-semibold">{acc.name}</div>
-                    <div className="text-sm text-muted-foreground">{acc.username}</div>
+                    <div className="text-sm text-muted-foreground/60">{acc.username}</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
-                    variant="secondary"
+                    variant="ghost"
                     size="sm"
+                    className="text-muted-foreground hover:text-foreground"
                     onClick={(e) => {
                       e.stopPropagation();
                       setEditingAccount(acc);
@@ -736,8 +716,9 @@ function App() {
                     编辑
                   </Button>
                   <Button
-                    variant="destructive"
+                    variant="ghost"
                     size="sm"
+                    className="text-muted-foreground hover:text-destructive hover:bg-destructive/8"
                     onClick={(e) => {
                       e.stopPropagation();
                       if (confirm(`确定要删除账号 "${acc.name}" 吗？`)) {
@@ -761,15 +742,15 @@ function App() {
     <div className="max-w-4xl mx-auto">
       {(loading || localStep === "migrating") && renderLoading()}
 
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <Button variant="ghost" onClick={() => setPage("home")} className="-ml-2 mb-2">
+          <Button variant="ghost" onClick={() => setPage("home")} className="-ml-3 mb-2 text-muted-foreground/70">
             <ArrowLeft className="h-4 w-4 mr-2" />
             返回
           </Button>
-          <h1 className="text-2xl font-bold">本地迁移</h1>
+          <h1 className="text-2xl font-bold text-gradient">本地迁移</h1>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-1.5">
           {["选择流程", "目标账号", "完成"].map((step, idx) => (
             <Badge
               key={step}
@@ -780,6 +761,7 @@ function App() {
                   ? "default"
                   : "secondary"
               }
+              className="text-xs"
             >
               {idx + 1}. {step}
             </Badge>
@@ -801,22 +783,22 @@ function App() {
 
               <div className="flex items-center gap-4">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
                   <Input
                     placeholder="搜索流程..."
                     value={localSearch}
                     onChange={e => { setLocalSearch(e.target.value); setLocalCurrentPage(1); }}
-                    className="pl-9"
+                    className="pl-10"
                   />
                 </div>
-                <span className="text-sm text-muted-foreground whitespace-nowrap">
+                <span className="text-sm text-muted-foreground/60 whitespace-nowrap">
                   已选 {selectedLocalIds.size} / {filteredLocalFlows.length}
                 </span>
               </div>
 
-              <div className="border rounded-xl overflow-hidden max-h-[300px] overflow-y-auto">
+              <div className="rounded-2xl border border-border/30 overflow-hidden max-h-[300px] overflow-y-auto">
                 {paginatedLocalFlows.length === 0 ? (
-                  <div className="p-8 text-center text-muted-foreground">
+                  <div className="p-8 text-center text-muted-foreground/70">
                     {localSearch ? "未找到匹配的流程" : "暂无本地流程"}
                   </div>
                 ) : (
@@ -832,18 +814,18 @@ function App() {
                           setSelectedLocalIds(newSet);
                         }}
                         className={cn(
-                          "flex items-center gap-3 p-3 border-b last:border-0 cursor-pointer transition-colors",
-                          selectedLocalIds.has(realIdx) ? "bg-primary/5" : "hover:bg-muted/50"
+                          "flex items-center gap-3 p-3.5 border-b border-border/20 last:border-0 cursor-pointer transition-all duration-200",
+                          selectedLocalIds.has(realIdx) ? "bg-primary/6" : "hover:bg-muted/40"
                         )}
                       >
                         <div className={cn(
-                          "w-5 h-5 rounded border-2 flex items-center justify-center",
-                          selectedLocalIds.has(realIdx) ? "bg-primary border-primary" : "border-muted-foreground"
+                          "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors",
+                          selectedLocalIds.has(realIdx) ? "bg-primary border-primary" : "border-muted-foreground/30"
                         )}>
                           {selectedLocalIds.has(realIdx) && <Check className="h-3 w-3 text-primary-foreground" />}
                         </div>
                         <span className="flex-1 font-medium truncate">{flow.name}</span>
-                        <span className="text-sm text-muted-foreground">{flow.update_time}</span>
+                        <span className="text-sm text-muted-foreground/50">{flow.update_time}</span>
                       </div>
                     );
                   })
@@ -852,7 +834,7 @@ function App() {
 
               {renderPagination(localCurrentPage, localTotalPages, setLocalCurrentPage, localPageSize, setLocalPageSize)}
 
-              <div className="flex items-center justify-between pt-4 border-t">
+              <div className="flex items-center justify-between pt-4 border-t border-border/20">
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => setSelectedLocalIds(new Set(filteredLocalFlows.map(f => localFlows.indexOf(f))))}>
                     全选
@@ -879,11 +861,11 @@ function App() {
             <div className="space-y-6">
               {renderAccountSelector(targetAccountId, setTargetAccountId, targetManualUser, setTargetManualUser, targetManualPwd, setTargetManualPwd, "选择目标账号")}
 
-              <div className="p-4 rounded-xl bg-primary/5 text-center">
+              <div className="p-4 rounded-2xl bg-primary/6 text-center">
                 <span className="text-primary font-medium">已选择 {selectedLocalIds.size} 个流程</span>
               </div>
 
-              <div className="flex justify-between pt-4 border-t">
+              <div className="flex justify-between pt-4 border-t border-border/20">
                 <Button variant="outline" onClick={() => setLocalStep("list")}>
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   上一步
@@ -907,12 +889,12 @@ function App() {
                   <div
                     key={idx}
                     className={cn(
-                      "flex items-center gap-3 p-3 rounded-lg",
-                      r.success ? "bg-green-500/10" : "bg-red-500/10"
+                      "flex items-center gap-3 p-3.5 rounded-xl",
+                      r.success ? "bg-emerald-500/8" : "bg-red-500/8"
                     )}
                   >
                     {r.success ? (
-                      <Check className="h-5 w-5 text-green-500" />
+                      <Check className="h-5 w-5 text-emerald-500" />
                     ) : (
                       <X className="h-5 w-5 text-red-500" />
                     )}
@@ -921,7 +903,7 @@ function App() {
                 ))}
               </div>
 
-              <div className="text-center text-lg font-semibold text-green-600">
+              <div className="text-center text-lg font-semibold text-emerald-600 dark:text-emerald-400">
                 成功 {results.filter(r => r.success).length} / {results.length} 个
               </div>
 
@@ -940,15 +922,15 @@ function App() {
     <div className="max-w-4xl mx-auto">
       {(loading || cloudStep === "migrating") && renderLoading()}
 
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <Button variant="ghost" onClick={() => setPage("home")} className="-ml-2 mb-2">
+          <Button variant="ghost" onClick={() => setPage("home")} className="-ml-3 mb-2 text-muted-foreground/70">
             <ArrowLeft className="h-4 w-4 mr-2" />
             返回
           </Button>
-          <h1 className="text-2xl font-bold">云端迁移</h1>
+          <h1 className="text-2xl font-bold text-gradient">云端迁移</h1>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-1.5">
           {["源账号", "选择流程", "目标账号", "完成"].map((step, idx) => (
             <Badge
               key={step}
@@ -960,6 +942,7 @@ function App() {
                   ? "default"
                   : "secondary"
               }
+              className="text-xs"
             >
               {idx + 1}. {step}
             </Badge>
@@ -973,7 +956,7 @@ function App() {
             <div className="space-y-6">
               {renderAccountSelector(sourceAccountId, setSourceAccountId, sourceManualUser, setSourceManualUser, sourceManualPwd, setSourceManualPwd, "选择源账号（从此账号获取流程）")}
 
-              <div className="flex justify-end pt-4 border-t">
+              <div className="flex justify-end pt-4 border-t border-border/20">
                 <Button
                   onClick={cloudLoginSource}
                   disabled={!sourceAccountId || (sourceAccountId === "manual" && (!sourceManualUser || !sourceManualPwd)) || loading}
@@ -991,22 +974,22 @@ function App() {
 
               <div className="flex items-center gap-4">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
                   <Input
                     placeholder="搜索流程..."
                     value={cloudSearch}
                     onChange={e => { setCloudSearch(e.target.value); setCloudCurrentPage(1); }}
-                    className="pl-9"
+                    className="pl-10"
                   />
                 </div>
-                <span className="text-sm text-muted-foreground whitespace-nowrap">
+                <span className="text-sm text-muted-foreground/60 whitespace-nowrap">
                   已选 {selectedCloudIds.size} / {filteredCloudFlows.length}
                 </span>
               </div>
 
-              <div className="border rounded-xl overflow-hidden max-h-[300px] overflow-y-auto">
+              <div className="rounded-2xl border border-border/30 overflow-hidden max-h-[300px] overflow-y-auto">
                 {paginatedCloudFlows.length === 0 ? (
-                  <div className="p-8 text-center text-muted-foreground">
+                  <div className="p-8 text-center text-muted-foreground/70">
                     {cloudSearch ? "未找到匹配的流程" : "暂无云端流程"}
                   </div>
                 ) : (
@@ -1022,18 +1005,18 @@ function App() {
                           setSelectedCloudIds(newSet);
                         }}
                         className={cn(
-                          "flex items-center gap-3 p-3 border-b last:border-0 cursor-pointer transition-colors",
-                          selectedCloudIds.has(realIdx) ? "bg-primary/5" : "hover:bg-muted/50"
+                          "flex items-center gap-3 p-3.5 border-b border-border/20 last:border-0 cursor-pointer transition-all duration-200",
+                          selectedCloudIds.has(realIdx) ? "bg-primary/6" : "hover:bg-muted/40"
                         )}
                       >
                         <div className={cn(
-                          "w-5 h-5 rounded border-2 flex items-center justify-center",
-                          selectedCloudIds.has(realIdx) ? "bg-primary border-primary" : "border-muted-foreground"
+                          "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors",
+                          selectedCloudIds.has(realIdx) ? "bg-primary border-primary" : "border-muted-foreground/30"
                         )}>
                           {selectedCloudIds.has(realIdx) && <Check className="h-3 w-3 text-primary-foreground" />}
                         </div>
                         <span className="flex-1 font-medium truncate">{flow.appName}</span>
-                        <span className="text-sm text-muted-foreground">{flow.updateTime?.substring(0, 19) || ""}</span>
+                        <span className="text-sm text-muted-foreground/50">{flow.updateTime?.substring(0, 19) || ""}</span>
                       </div>
                     );
                   })
@@ -1042,7 +1025,7 @@ function App() {
 
               {renderPagination(cloudCurrentPage, cloudTotalPages, setCloudCurrentPage, cloudPageSize, setCloudPageSize)}
 
-              <div className="flex items-center justify-between pt-4 border-t">
+              <div className="flex items-center justify-between pt-4 border-t border-border/20">
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => setSelectedCloudIds(new Set(filteredCloudFlows.map(f => cloudFlows.indexOf(f))))}>
                     全选
@@ -1067,11 +1050,11 @@ function App() {
             <div className="space-y-6">
               {renderAccountSelector(targetAccountId, setTargetAccountId, targetManualUser, setTargetManualUser, targetManualPwd, setTargetManualPwd, "选择目标账号")}
 
-              <div className="p-4 rounded-xl bg-primary/5 text-center">
+              <div className="p-4 rounded-2xl bg-primary/6 text-center">
                 <span className="text-primary font-medium">已选择 {selectedCloudIds.size} 个流程</span>
               </div>
 
-              <div className="flex justify-between pt-4 border-t">
+              <div className="flex justify-between pt-4 border-t border-border/20">
                 <Button variant="outline" onClick={() => setCloudStep("list")}>
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   上一步
@@ -1095,12 +1078,12 @@ function App() {
                   <div
                     key={idx}
                     className={cn(
-                      "flex items-center gap-3 p-3 rounded-lg",
-                      r.success ? "bg-green-500/10" : "bg-red-500/10"
+                      "flex items-center gap-3 p-3.5 rounded-xl",
+                      r.success ? "bg-emerald-500/8" : "bg-red-500/8"
                     )}
                   >
                     {r.success ? (
-                      <Check className="h-5 w-5 text-green-500" />
+                      <Check className="h-5 w-5 text-emerald-500" />
                     ) : (
                       <X className="h-5 w-5 text-red-500" />
                     )}
@@ -1109,7 +1092,7 @@ function App() {
                 ))}
               </div>
 
-              <div className="text-center text-lg font-semibold text-green-600">
+              <div className="text-center text-lg font-semibold text-emerald-600 dark:text-emerald-400">
                 成功 {results.filter(r => r.success).length} / {results.length} 个
               </div>
 
@@ -1128,18 +1111,20 @@ function App() {
     <Layout
       currentPage={page}
       onNavigate={setPage}
-      theme={theme}
-      onThemeChange={setTheme}
+      theme={settings.theme as Theme}
+      onThemeChange={(t) => handleUpdateSettings({ theme: t })}
       accountsCount={accounts.length}
       onSignOut={signOut}
       username={username}
       isAdmin={isAdmin}
+      language={settings.language}
     >
       {page === "home" && renderHome()}
       {page === "migrate" && renderMigrate()}
       {page === "accounts" && renderAccounts()}
       {page === "local" && renderLocalMigration()}
       {page === "cloud" && renderCloudMigration()}
+      {page === "settings" && renderSettings()}
 
       {/* 账号详情弹窗 */}
       <AccountDetailDialog

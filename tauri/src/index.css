@@ -4,26 +4,39 @@
 
 @layer base {
     :root {
-        --background: 0 0% 99%;
-        --foreground: 222.2 84% 4.9%;
+        /* Premium Light Blue Theme (Light Mode) */
+        --background: 210 50% 98%;
+        /* Very pale blue-tinted white */
+        --foreground: 222 47% 11%;
+        /* Deep blue-gray */
+
         --card: 0 0% 100%;
-        --card-foreground: 222.2 84% 4.9%;
+        --card-foreground: 222 47% 11%;
+
         --popover: 0 0% 100%;
-        --popover-foreground: 222.2 84% 4.9%;
-        --primary: 221.2 83.2% 53.3%;
+        --popover-foreground: 222 47% 11%;
+
+        --primary: 221 83% 53%;
+        /* Vibrant refined blue */
         --primary-foreground: 210 40% 98%;
+
         --secondary: 210 40% 96.1%;
-        --secondary-foreground: 222.2 47.4% 11.2%;
+        --secondary-foreground: 222 47% 11.2%;
+
         --muted: 210 40% 96.1%;
         --muted-foreground: 215.4 16.3% 46.9%;
+
         --accent: 210 40% 96.1%;
-        --accent-foreground: 222.2 47.4% 11.2%;
+        --accent-foreground: 222 47% 11.2%;
+
         --destructive: 0 84.2% 60.2%;
         --destructive-foreground: 210 40% 98%;
-        --border: 214.3 31.8% 91.4%;
-        --input: 214.3 31.8% 91.4%;
-        --ring: 221.2 83.2% 53.3%;
-        --radius: 0.75rem;
+
+        --border: 214 32% 91%;
+        --input: 214 32% 91%;
+        --ring: 221 83% 53%;
+
+        --radius: 1rem;
 
         /* 扩展变量 */
         --sidebar-width: 240px;
@@ -31,24 +44,36 @@
     }
 
     .dark {
-        --background: 224 71% 4%;
+        /* Premium Dark Blue Theme (Dark Mode) */
+        --background: 222 47% 11%;
+        /* Deep blue-black */
         --foreground: 210 40% 98%;
-        --card: 224 71% 6%;
+
+        --card: 217 33% 17%;
+        /* Darker blue-gray card */
         --card-foreground: 210 40% 98%;
-        --popover: 224 71% 6%;
+
+        --popover: 217 33% 17%;
         --popover-foreground: 210 40% 98%;
-        --primary: 217.2 91.2% 59.8%;
-        --primary-foreground: 222.2 47.4% 11.2%;
-        --secondary: 217.2 32.6% 17.5%;
+
+        --primary: 217 91% 60%;
+        /* Lighter vibrant blue */
+        --primary-foreground: 222 47% 11.2%;
+
+        --secondary: 217 33% 17.5%;
         --secondary-foreground: 210 40% 98%;
-        --muted: 217.2 32.6% 12%;
+
+        --muted: 217 33% 17.5%;
         --muted-foreground: 215 20.2% 65.1%;
-        --accent: 217.2 32.6% 17.5%;
+
+        --accent: 217 33% 17.5%;
         --accent-foreground: 210 40% 98%;
+
         --destructive: 0 62.8% 30.6%;
         --destructive-foreground: 210 40% 98%;
-        --border: 217.2 32.6% 17.5%;
-        --input: 217.2 32.6% 17.5%;
+
+        --border: 217 33% 17.5%;
+        --input: 217 33% 17.5%;
         --ring: 224.3 76.3% 48%;
     }
 }
@@ -61,10 +86,76 @@
     body {
         @apply bg-background text-foreground;
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
     }
 }
 
-/* Hide native password reveal button (avoid duplicate eye icons) */
+/* ===== 动画 ===== */
+@keyframes fade-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes scale-in {
+    from {
+        opacity: 0;
+        transform: scale(0.96);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.animate-fade-in-up {
+    animation: fade-in-up 0.3s ease-out both;
+}
+
+.animate-fade-in {
+    animation: fade-in 0.25s ease-out both;
+}
+
+.animate-scale-in {
+    animation: scale-in 0.25s ease-out both;
+}
+
+/* 交错动画延迟 */
+.delay-1 {
+    animation-delay: 0.05s;
+}
+
+.delay-2 {
+    animation-delay: 0.1s;
+}
+
+.delay-3 {
+    animation-delay: 0.15s;
+}
+
+.delay-4 {
+    animation-delay: 0.2s;
+}
+
+/* ===== 隐藏密码原生按钮 ===== */
 input::-ms-reveal,
 input::-ms-clear,
 input::-webkit-credentials-auto-fill-button,
@@ -72,27 +163,55 @@ input::-webkit-clear-button {
     display: none !important;
 }
 
-/* For Edge/Chrome password reveal button */
 input[type="password"]::-ms-reveal,
 input[type="password"]::-webkit-reveal {
     display: none !important;
 }
 
-/* Custom scrollbar */
+/* ===== 自定义滚动条（超细 macOS 风格） ===== */
 ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-    background: hsl(var(--muted));
+    background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: hsl(var(--muted-foreground) / 0.3);
-    border-radius: 4px;
+    background: hsl(var(--muted-foreground) / 0.15);
+    border-radius: 99px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground) / 0.5);
+    background: hsl(var(--muted-foreground) / 0.3);
+}
+
+/* ===== 渐变文字（淡蓝配色） ===== */
+.text-gradient {
+    /* Premium Blue Gradient */
+    background: linear-gradient(135deg, hsl(221, 83%, 53%), hsl(200, 90%, 60%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.dark .text-gradient {
+    background: linear-gradient(135deg, hsl(217, 91%, 70%), hsl(200, 90%, 75%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* 管理员黄金色 */
+.text-gold {
+    color: hsl(45, 93%, 47%);
+}
+
+.bg-gold-subtle {
+    background-color: hsl(45, 93%, 47%, 0.1);
+}
+
+.border-gold-subtle {
+    border-color: hsl(45, 93%, 47%, 0.2);
 }

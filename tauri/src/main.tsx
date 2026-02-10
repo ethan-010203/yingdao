@@ -2,8 +2,10 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { ConfigProvider } from "./contexts/ConfigContext";
 import { LoginPage } from "./components/LoginPage";
 import { Loader2 } from "lucide-react";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import "./index.css";
 
 // 根据认证状态渲染不同内容的组件
@@ -33,9 +35,13 @@ function AuthenticatedApp() {
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-    <AuthProvider>
-      <AuthenticatedApp />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <ConfigProvider>
+          <AuthenticatedApp />
+        </ConfigProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   </React.StrictMode>,
 );
 

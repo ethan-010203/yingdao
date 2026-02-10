@@ -3,14 +3,14 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const cardVariants = cva(
-    "rounded-xl border bg-card text-card-foreground transition-all duration-200",
+    "rounded-2xl bg-card text-card-foreground transition-all duration-250 ease-out",
     {
         variants: {
             variant: {
-                default: "shadow-sm hover:shadow-md",
-                glass: "bg-background/60 backdrop-blur-xl border-white/20 shadow-lg",
-                elevated: "shadow-lg hover:shadow-xl",
-                outline: "border-2 shadow-none",
+                default: "shadow-sm shadow-black/[0.04] dark:shadow-black/[0.2] hover:shadow-md hover:shadow-black/[0.08] dark:hover:shadow-black/[0.3] border border-border/40",
+                glass: "bg-card/60 backdrop-blur-2xl border border-white/10 shadow-lg shadow-black/[0.06] dark:shadow-black/[0.3]",
+                elevated: "shadow-lg shadow-black/[0.06] dark:shadow-black/[0.3] hover:shadow-xl border border-border/30",
+                outline: "border border-border/60 shadow-none",
             },
         },
         defaultVariants: {
@@ -40,7 +40,7 @@ const CardHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
     <div
         ref={ref}
-        className={cn("flex flex-col space-y-1.5 p-6", className)}
+        className={cn("flex flex-col space-y-2 p-6", className)}
         {...props}
     />
 ))
@@ -53,7 +53,7 @@ const CardTitle = React.forwardRef<
     <h3
         ref={ref}
         className={cn(
-            "text-xl font-semibold leading-none tracking-tight",
+            "text-lg font-semibold leading-tight tracking-tight",
             className
         )}
         {...props}
@@ -67,7 +67,7 @@ const CardDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
     <p
         ref={ref}
-        className={cn("text-sm text-muted-foreground", className)}
+        className={cn("text-sm text-muted-foreground/80", className)}
         {...props}
     />
 ))

@@ -35,106 +35,107 @@ export function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 relative overflow-hidden">
+        <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
             {/* 背景装饰 */}
             <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-                <div className="absolute -top-1/2 -right-1/2 w-full h-full bg-gradient-to-bl from-primary/10 via-transparent to-transparent rounded-full blur-3xl" />
-                <div className="absolute -bottom-1/2 -left-1/2 w-full h-full bg-gradient-to-tr from-primary/10 via-transparent to-transparent rounded-full blur-3xl" />
-                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-blue-500/5 to-purple-500/5 rounded-full blur-3xl animate-pulse" />
+                <div className="absolute -top-[40%] -right-[30%] w-[60%] h-[60%] bg-gradient-to-bl from-[hsl(0,0%,50%,0.04)] via-transparent to-transparent rounded-full blur-3xl" />
+                <div className="absolute -bottom-[40%] -left-[30%] w-[60%] h-[60%] bg-gradient-to-tr from-[hsl(0,0%,40%,0.04)] via-transparent to-transparent rounded-full blur-3xl" />
             </div>
 
-            <Card className="w-full max-w-md mx-4 backdrop-blur-sm bg-card/95 border-border/50 shadow-2xl">
-                <CardHeader className="text-center pb-2">
-                    {/* Logo / 标题区域 */}
-                    <div className="mx-auto mb-4 w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg">
-                        <LogIn className="h-8 w-8 text-primary-foreground" />
-                    </div>
-                    <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                        影刀工具
-                    </CardTitle>
-                    <CardDescription className="text-muted-foreground">
-                        请登录以继续使用
-                    </CardDescription>
-                </CardHeader>
-
-                <CardContent className="pt-4">
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* 用户名输入 */}
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-foreground" htmlFor="username">
-                                用户名
-                            </label>
-                            <div className="relative">
-                                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    id="username"
-                                    type="text"
-                                    placeholder="请输入用户名"
-                                    value={username}
-                                    onChange={(e) => setUsername(e.target.value)}
-                                    className="pl-10 h-11"
-                                    disabled={loading}
-                                    autoComplete="username"
-                                />
-                            </div>
+            <div className="animate-scale-in">
+                <Card className="w-full max-w-md mx-4 bg-card/80 backdrop-blur-2xl border-border/30 shadow-xl shadow-black/[0.06] dark:shadow-black/[0.3]">
+                    <CardHeader className="text-center pb-2">
+                        {/* Logo / 标题区域 */}
+                        <div className="mx-auto mb-5 w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/25">
+                            <LogIn className="h-8 w-8" />
                         </div>
+                        <CardTitle className="text-2xl font-bold">
+                            影刀工具
+                        </CardTitle>
+                        <CardDescription className="text-muted-foreground/70">
+                            请登录以继续使用
+                        </CardDescription>
+                    </CardHeader>
 
-                        {/* 密码输入 */}
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-foreground" htmlFor="password">
-                                密码
-                            </label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    id="password"
-                                    type={showPassword ? "text" : "password"}
-                                    placeholder="请输入密码"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="pl-10 pr-10 h-11"
-                                    disabled={loading}
-                                    autoComplete="current-password"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                                    tabIndex={-1}
-                                >
-                                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                </button>
+                    <CardContent className="pt-6">
+                        <form onSubmit={handleSubmit} className="space-y-5">
+                            {/* 用户名输入 */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-foreground/80" htmlFor="username">
+                                    用户名
+                                </label>
+                                <div className="relative">
+                                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+                                    <Input
+                                        id="username"
+                                        type="text"
+                                        placeholder="请输入用户名"
+                                        value={username}
+                                        onChange={(e) => setUsername(e.target.value)}
+                                        className="pl-10 h-11"
+                                        disabled={loading}
+                                        autoComplete="username"
+                                    />
+                                </div>
                             </div>
-                        </div>
 
-                        {/* 登录按钮 */}
-                        <Button
-                            type="submit"
-                            className="w-full h-11 text-base font-medium mt-6"
-                            disabled={loading}
-                        >
-                            {loading ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    登录中...
-                                </>
-                            ) : (
-                                <>
-                                    <LogIn className="mr-2 h-4 w-4" />
-                                    登录
-                                </>
-                            )}
-                        </Button>
-                    </form>
+                            {/* 密码输入 */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-foreground/80" htmlFor="password">
+                                    密码
+                                </label>
+                                <div className="relative">
+                                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+                                    <Input
+                                        id="password"
+                                        type={showPassword ? "text" : "password"}
+                                        placeholder="请输入密码"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        className="pl-10 pr-10 h-11"
+                                        disabled={loading}
+                                        autoComplete="current-password"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground transition-colors"
+                                        tabIndex={-1}
+                                    >
+                                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                    </button>
+                                </div>
+                            </div>
 
-                    {/* 版权信息 */}
-                    <p className="text-center text-xs text-muted-foreground mt-6">
-                        © 2026 影刀工具 · 安全登录
-                    </p>
-                </CardContent>
-            </Card>
+                            {/* 登录按钮 */}
+                            <Button
+                                type="submit"
+                                className="w-full h-11 text-base font-medium mt-8"
+                                disabled={loading}
+                            >
+                                {loading ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        登录中...
+                                    </>
+                                ) : (
+                                    <>
+                                        <LogIn className="mr-2 h-4 w-4" />
+                                        登录
+                                    </>
+                                )}
+                            </Button>
+                        </form>
 
-            {/* Toast 通知 */}
+                        {/* 版权信息 */}
+                        <p className="text-center text-xs text-muted-foreground/50 mt-8">
+                            © 2026 影刀工具 · 安全登录
+                        </p>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* 提示通知 */}
             <Toaster />
         </div>
     )

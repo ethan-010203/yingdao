@@ -15,10 +15,30 @@ pub struct AccountConfig {
     pub password: String,
 }
 
+/// 设置配置
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SettingsConfig {
+    pub language: String,
+    pub theme: String, // "light", "dark", "system"
+    pub auto_update: bool,
+}
+
+impl Default for SettingsConfig {
+    fn default() -> Self {
+        Self {
+            language: "zh-CN".to_string(),
+            theme: "system".to_string(),
+            auto_update: true,
+        }
+    }
+}
+
 /// 配置文件
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     pub accounts: Vec<AccountConfig>,
+    #[serde(default)]
+    pub settings: SettingsConfig,
 }
 
 impl Default for Config {
@@ -36,6 +56,7 @@ impl Default for Config {
                     password: "".to_string(),
                 },
             ],
+            settings: SettingsConfig::default(),
         }
     }
 }

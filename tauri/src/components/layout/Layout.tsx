@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils"
 import { Sidebar } from "./Sidebar"
 
 type Theme = "light" | "dark" | "system"
-type Page = "home" | "migrate" | "accounts" | "local" | "cloud"
+type Page = "home" | "migrate" | "accounts" | "local" | "cloud" | "settings"
 
 interface LayoutProps {
     children: React.ReactNode
@@ -15,6 +15,7 @@ interface LayoutProps {
     onSignOut?: () => void
     username?: string | null
     isAdmin?: boolean
+    language?: string
 }
 
 export function Layout({
@@ -27,15 +28,16 @@ export function Layout({
     onSignOut,
     username,
     isAdmin = false,
+    language = "zh-CN",
 }: LayoutProps) {
     const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false)
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30">
-            {/* 背景装饰 */}
+        <div className="min-h-screen bg-background">
+            {/* 背景装饰 — 轻微灰色光晕 */}
             <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-                <div className="absolute -top-1/2 -right-1/2 w-full h-full bg-gradient-to-bl from-primary/5 via-transparent to-transparent rounded-full blur-3xl" />
-                <div className="absolute -bottom-1/2 -left-1/2 w-full h-full bg-gradient-to-tr from-primary/5 via-transparent to-transparent rounded-full blur-3xl" />
+                <div className="absolute -top-[40%] -right-[30%] w-[70%] h-[70%] bg-gradient-to-bl from-[hsl(0,0%,50%,0.03)] via-transparent to-transparent rounded-full blur-3xl" />
+                <div className="absolute -bottom-[40%] -left-[30%] w-[70%] h-[70%] bg-gradient-to-tr from-[hsl(0,0%,40%,0.03)] via-transparent to-transparent rounded-full blur-3xl" />
             </div>
 
             {/* 侧边栏 */}
@@ -50,6 +52,7 @@ export function Layout({
                 onSignOut={onSignOut}
                 username={username}
                 isAdmin={isAdmin}
+                language={language}
             />
 
             {/* 主内容区 */}
@@ -59,7 +62,7 @@ export function Layout({
                     sidebarCollapsed ? "ml-[68px]" : "ml-[240px]"
                 )}
             >
-                <div className="p-6 lg:p-8">
+                <div className="p-8 lg:p-10 animate-fade-in-up">
                     {children}
                 </div>
             </main>
