@@ -1,0 +1,588 @@
+CONNECT 49.234.162.212:443 HTTP/1.1
+Host: 49.234.162.212:443
+
+A SSLv3-compatible ClientHello handshake was found. Fiddler extracted the parameters below.
+
+Version: 3.3 (TLS/1.2)
+Random: 1B 6D 52 56 5F A0 44 2C 45 CE 91 CC 23 7F 5F A2 DC 37 D8 4F F0 06 A4 35 DB 75 40 03 90 9A 2C A7
+"Time": 2015/11/23 9:34:19
+SessionID: 51 58 67 80 10 BD 76 7F C5 7B BA 10 8E B1 A7 1C EB A0 05 68 01 61 BB 19 6A 41 88 24 E9 44 03 51
+Extensions: 
+	server_name	api.yingdao.com
+	status_request	OCSP - Implicit Responder
+	supported_versions	Tls1.3
+	signature_algs	rsa_pss_rsae_sha256, rsa_pss_rsae_sha384, rsa_pss_rsae_sha512, rsa_pkcs1_sha256, rsa_pkcs1_sha384, rsa_pkcs1_sha1, ecdsa_secp256r1_sha256, ecdsa_secp384r1_sha384, ecdsa_sha1, dsa_sha1, rsa_pkcs1_sha512, ecdsa_secp521r1_sha512
+	SessionTicket	empty
+	supported_groups	x25519 [0x1d], secp256r1 [0x17], secp384r1 [0x18]
+	ec_point_formats	uncompressed [0x0]
+	key_share	00 24 00 1D 00 20 74 DE 80 DB 66 BA 73 FA 2A F1 CE A8 6C 07 EB D6 DD 43 BF 51 23 D9 11 5A 90 63 69 E4 37 E1 32 0F
+	post_handshake_auth
+	extended_master_secret	empty
+	renegotiation_info	00
+	psk_key_exchange_modes	01 01
+Ciphers: 
+	[1302]	TLS_AES_256_GCM_SHA384
+	[1301]	TLS_AES_128_GCM_SHA256
+	[C02C]	TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+	[C02B]	TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+	[C030]	TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	[C02F]	TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+	[C024]	TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384
+	[C023]	TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256
+	[C028]	TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384
+	[C027]	TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
+	[C00A]	TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA
+	[C009]	TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA
+	[C014]	TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA
+	[C013]	TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA
+	[009D]	TLS_RSA_WITH_AES_256_GCM_SHA384
+	[009C]	TLS_RSA_WITH_AES_128_GCM_SHA256
+	[003D]	TLS_RSA_WITH_AES_256_CBC_SHA256
+	[003C]	TLS_RSA_WITH_AES_128_CBC_SHA256
+	[0035]	TLS_RSA_WITH_AES_256_CBC_SHA
+	[002F]	TLS_RSA_WITH_AES_128_CBC_SHA
+
+Compression: 
+	[00]	NO_COMPRESSION
+
+
+
+HTTP/1.1 200 Connection established
+
+Encrypted HTTPS traffic flows through this CONNECT tunnel. HTTPS Decryption is enabled in Fiddler, so decrypted sessions running in this tunnel will be shown in the Web Sessions list.
+
+Secure Protocol: Tls12
+Cipher: Aes128 128bits
+Hash Algorithm: Sha256 ?bits
+Key Exchange: ECDHE_RSA (0xae06) 255bits
+
+== Server Certificate ==========
+[Subject]
+  CN=*.yingdao.com
+
+[Issuer]
+  CN=RapidSSL TLS RSA CA G1, OU=www.digicert.com, O=DigiCert Inc, C=US
+
+[Serial Number]
+  0BBE0CD37B344F4FFAC5C452195D21FD
+
+[Not Before]
+  2025/6/5 8:00:00
+
+[Not After]
+  2026/6/15 7:59:59
+
+[Thumbprint]
+  C3BD3DFC78B2108CF088900B0308D0952011B90A
+
+[SubjectAltNames]
+*.yingdao.com, yingdao.com
+
+
+------------------------------------------------------------------
+
+POST https://api.yingdao.com/oauth/token HTTP/1.1
+Connection: Keep-Alive
+Content-Type: application/x-www-form-urlencoded; Charset=UTF-8
+Accept: */*
+Accept-Language: zh-cn
+Authorization: basic c25zOlQ3c3ZGY0lMNGZvUGoxajk=
+Referer: https://api.yingdao.com/oauth/token
+User-Agent: Mozilla/4.0 (compatible; MSIE 9.0; Windows NT 6.1)
+Content-Length: 258
+Host: api.yingdao.com
+
+username=19375216067&password=U8OkYxrV%2F3KZm3RQ6OuTWTkdLXO0fwClymXhNdRg1mGLFfg%2FjkNOt4tRyFHPmLWb578%2BAEjM01lUd6xIvZly5P3HMBlR6lQwhTyi%2FIjCHGeS%2BqM9y5ir3JclYdbpv4w9aHRMU2K%2BVlGqrfWORLdQ2vnZLKfqVufnDVUNonvF4IM%3D&crypt=metal&grant_type=password&scope=all
+HTTP/1.1 200 OK
+Date: Sat, 07 Feb 2026 10:12:00 GMT
+Content-Type: text/plain;charset=UTF-8
+Content-Length: 186
+Connection: keep-alive
+Vary: Origin
+Vary: Access-Control-Request-Method
+Vary: Access-Control-Request-Headers
+X-Xybot-Trace-Id: 74e6ce2c168d440f8648c70fc3ff44fd.95.17704591203740923
+x-b3-traceid: 74e6ce2c168d440f8648c70fc3ff44fd.95.17704591203740923
+Vary: Origin
+Vary: Access-Control-Request-Method
+Vary: Access-Control-Request-Headers
+X-Xss-Protection: 1; mode=block
+X-Permitted-Cross-Domain-Policies: none
+X-Frame-Options: DENY
+X-Download-Options: noopen
+X-Content-Type-Options: nosniff
+Content-Security-Policy: default-src 'self' https:; font-src 'self' https: data:; img-src 'self' https: data:; object-src 'none'; script-src 'self' 'unsafe-inline' https://*.alipay.com/; style-src 'self' https: 'unsafe-inline';
+Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+Pragma: no-cache
+Expires: 0
+Strict-Transport-Security: max-age=15724800; includeSubDomains
+Referrer-Policy: no-referrer
+Server: YdServer_v1.2.0
+
+{"access_token":"e7cd6de6-ced9-4588-aa4a-1a0afc30480a","apiType":"oauth2","code":"200","expires_in":2592000,"isFirstClientLogin":false,"scope":"all","success":true,"token_type":"bearer"}
+
+------------------------------------------------------------------
+
+CONNECT api.yingdao.com:443 HTTP/1.1
+Host: api.yingdao.com:443
+User-Agent: Mozilla/4.0 (compatible; MSIE 9.0; Windows NT 6.1)
+
+
+HTTP/1.1 200 Connection established
+
+
+
+------------------------------------------------------------------
+
+CONNECT 49.234.162.212:443 HTTP/1.1
+Host: 49.234.162.212:443
+
+A SSLv3-compatible ClientHello handshake was found. Fiddler extracted the parameters below.
+
+Version: 3.3 (TLS/1.2)
+Random: CA 25 3E D4 ED 47 AF E4 84 83 25 B2 A0 88 E3 79 B6 71 A0 34 5A C9 69 F3 13 FE C2 87 47 61 5D B1
+"Time": 2082/11/2 18:58:18
+SessionID: 39 68 5B 13 56 F2 33 2F 3C 46 87 E1 76 D2 24 92 22 AC 98 19 26 36 F8 6B F7 9D 34 F0 8A D2 07 E6
+Extensions: 
+	server_name	api.winrobot360.com
+	status_request	OCSP - Implicit Responder
+	supported_versions	Tls1.3
+	signature_algs	rsa_pss_rsae_sha256, rsa_pss_rsae_sha384, rsa_pss_rsae_sha512, rsa_pkcs1_sha256, rsa_pkcs1_sha384, rsa_pkcs1_sha1, ecdsa_secp256r1_sha256, ecdsa_secp384r1_sha384, ecdsa_sha1, dsa_sha1, rsa_pkcs1_sha512, ecdsa_secp521r1_sha512
+	SessionTicket	empty
+	supported_groups	x25519 [0x1d], secp256r1 [0x17], secp384r1 [0x18]
+	ec_point_formats	uncompressed [0x0]
+	key_share	00 24 00 1D 00 20 94 2D 27 DC B9 11 7B 29 52 1D ED 19 91 68 C5 99 EB 62 89 0C A4 DD 1B 7A C3 15 7E 8E 21 1C A6 5A
+	post_handshake_auth
+	extended_master_secret	empty
+	renegotiation_info	00
+	psk_key_exchange_modes	01 01
+Ciphers: 
+	[1302]	TLS_AES_256_GCM_SHA384
+	[1301]	TLS_AES_128_GCM_SHA256
+	[C02C]	TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+	[C02B]	TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+	[C030]	TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	[C02F]	TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+	[C024]	TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384
+	[C023]	TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256
+	[C028]	TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384
+	[C027]	TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
+	[C00A]	TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA
+	[C009]	TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA
+	[C014]	TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA
+	[C013]	TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA
+	[009D]	TLS_RSA_WITH_AES_256_GCM_SHA384
+	[009C]	TLS_RSA_WITH_AES_128_GCM_SHA256
+	[003D]	TLS_RSA_WITH_AES_256_CBC_SHA256
+	[003C]	TLS_RSA_WITH_AES_128_CBC_SHA256
+	[0035]	TLS_RSA_WITH_AES_256_CBC_SHA
+	[002F]	TLS_RSA_WITH_AES_128_CBC_SHA
+
+Compression: 
+	[00]	NO_COMPRESSION
+
+
+
+HTTP/1.1 200 Connection established
+
+Encrypted HTTPS traffic flows through this CONNECT tunnel. HTTPS Decryption is enabled in Fiddler, so decrypted sessions running in this tunnel will be shown in the Web Sessions list.
+
+Secure Protocol: Tls12
+Cipher: Aes128 128bits
+Hash Algorithm: Sha256 ?bits
+Key Exchange: ECDHE_RSA (0xae06) 255bits
+
+== Server Certificate ==========
+[Subject]
+  CN=*.yingdao.com
+
+[Issuer]
+  CN=RapidSSL TLS RSA CA G1, OU=www.digicert.com, O=DigiCert Inc, C=US
+
+[Serial Number]
+  0BBE0CD37B344F4FFAC5C452195D21FD
+
+[Not Before]
+  2025/6/5 8:00:00
+
+[Not After]
+  2026/6/15 7:59:59
+
+[Thumbprint]
+  C3BD3DFC78B2108CF088900B0308D0952011B90A
+
+[SubjectAltNames]
+*.yingdao.com, yingdao.com
+
+
+------------------------------------------------------------------
+
+POST https://api.winrobot360.com/api/client/app/file/assignUploadUrl HTTP/1.1
+Connection: Keep-Alive
+Content-Type: application/json; charset=utf-8
+Accept: */*
+Accept-Language: zh-cn
+Authorization: bearer e7cd6de6-ced9-4588-aa4a-1a0afc30480a
+Referer: https://api.winrobot360.com/api/client/app/file/assignUploadUrl
+User-Agent: Mozilla/4.0 (compatible; MSIE 9.0; Windows NT 6.1)
+Content-Length: 92
+Host: api.winrobot360.com
+
+{"appId":"676e7539-d345-407b-b09a-e0ec066c8984","appType":"app","version":"","isBot":"true"}
+HTTP/1.1 200 OK
+Date: Sat, 07 Feb 2026 10:12:00 GMT
+Content-Type: application/json
+Transfer-Encoding: chunked
+Connection: keep-alive
+Vary: Accept-Encoding
+Vary: Origin
+Vary: Access-Control-Request-Method
+Vary: Access-Control-Request-Headers
+X-Xybot-Trace-Id: 4cb7d4e0bdb54aebb000419dfdc5be64.76.17704591208814769
+x-b3-traceid: 4cb7d4e0bdb54aebb000419dfdc5be64.76.17704591208814769
+Vary: Origin
+Vary: Access-Control-Request-Method
+Vary: Access-Control-Request-Headers
+X-Xss-Protection: 1; mode=block
+X-Permitted-Cross-Domain-Policies: none
+X-Frame-Options: DENY
+X-Download-Options: noopen
+X-Content-Type-Options: nosniff
+Content-Security-Policy: default-src 'self' https:; font-src 'self' https: data:; img-src 'self' https: data:; object-src 'none'; script-src 'self' 'unsafe-inline' https://*.alipay.com/; style-src 'self' https: 'unsafe-inline';
+Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+Pragma: no-cache
+Expires: 0
+Strict-Transport-Security: max-age=15724800; includeSubDomains
+Referrer-Policy: no-referrer
+Server: YdServer_v1.2.0
+
+281
+{"data":{"fileKey":"robots/robot-676e7539-d345-407b-b09a-e0ec066c8984/v-1/package.bot","uploadUrl":"https://winrobot-pri-a.oss-cn-hangzhou.aliyuncs.com/robots/robot-676e7539-d345-407b-b09a-e0ec066c8984/v-1/package.bot?Expires=1770460920&OSSAccessKeyId=LTAI5t93vfGfysekhtsfrZU9&Signature=F5AbhKSfpOzVwzCGGNwxcsU6gPo%3D","readUrl":"https://winrobot-pri-a.oss-cn-hangzhou.aliyuncs.com/robots/robot-676e7539-d345-407b-b09a-e0ec066c8984/v-1/package.bot?Expires=1770502320&OSSAccessKeyId=LTAI5t93vfGfysekhtsfrZU9&Signature=RewR9%2FNyPqtwboaoaGK%2BvPhzBSI%3D","fileKeyMd5":"282404f60239aca80f3f21648db24c46","headers":{}},"code":200,"success":true}
+0
+
+
+
+------------------------------------------------------------------
+
+CONNECT api.winrobot360.com:443 HTTP/1.1
+Host: api.winrobot360.com:443
+User-Agent: Mozilla/4.0 (compatible; MSIE 9.0; Windows NT 6.1)
+
+
+HTTP/1.1 200 Connection established
+
+
+
+------------------------------------------------------------------
+
+CONNECT 39.173.43.218:443 HTTP/1.1
+Host: 39.173.43.218:443
+
+A SSLv3-compatible ClientHello handshake was found. Fiddler extracted the parameters below.
+
+Version: 3.3 (TLS/1.2)
+Random: 30 E3 70 23 07 77 85 B2 9E F1 7F 08 8F FB 67 E0 80 7E D1 F0 EA 02 51 B9 A2 0C A1 0D 2A E3 D3 4C
+"Time": 1988/11/4 6:52:32
+SessionID: FE C5 62 D5 CB 86 EF A6 AB 80 D1 8A 98 8D 67 3B 14 1E B6 16 49 BA 42 04 0D D7 C2 B7 90 48 4E 8B
+Extensions: 
+	server_name	winrobot-pri-a.oss-cn-hangzhou.aliyuncs.com
+	status_request	OCSP - Implicit Responder
+	supported_versions	Tls1.3
+	signature_algs	rsa_pss_rsae_sha256, rsa_pss_rsae_sha384, rsa_pss_rsae_sha512, rsa_pkcs1_sha256, rsa_pkcs1_sha384, rsa_pkcs1_sha1, ecdsa_secp256r1_sha256, ecdsa_secp384r1_sha384, ecdsa_sha1, dsa_sha1, rsa_pkcs1_sha512, ecdsa_secp521r1_sha512
+	SessionTicket	empty
+	supported_groups	x25519 [0x1d], secp256r1 [0x17], secp384r1 [0x18]
+	ec_point_formats	uncompressed [0x0]
+	key_share	00 24 00 1D 00 20 69 F8 4C 49 AD 98 E3 B4 B2 A4 0E 62 CE 45 A4 02 C1 94 8C 8D 67 33 DF 4D CC F9 63 5E 81 79 CB 67
+	post_handshake_auth
+	extended_master_secret	empty
+	renegotiation_info	00
+	psk_key_exchange_modes	01 01
+Ciphers: 
+	[1302]	TLS_AES_256_GCM_SHA384
+	[1301]	TLS_AES_128_GCM_SHA256
+	[C02C]	TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+	[C02B]	TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+	[C030]	TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	[C02F]	TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+	[C024]	TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384
+	[C023]	TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256
+	[C028]	TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384
+	[C027]	TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
+	[C00A]	TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA
+	[C009]	TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA
+	[C014]	TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA
+	[C013]	TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA
+	[009D]	TLS_RSA_WITH_AES_256_GCM_SHA384
+	[009C]	TLS_RSA_WITH_AES_128_GCM_SHA256
+	[003D]	TLS_RSA_WITH_AES_256_CBC_SHA256
+	[003C]	TLS_RSA_WITH_AES_128_CBC_SHA256
+	[0035]	TLS_RSA_WITH_AES_256_CBC_SHA
+	[002F]	TLS_RSA_WITH_AES_128_CBC_SHA
+
+Compression: 
+	[00]	NO_COMPRESSION
+
+
+
+HTTP/1.1 200 Connection established
+
+Encrypted HTTPS traffic flows through this CONNECT tunnel. HTTPS Decryption is enabled in Fiddler, so decrypted sessions running in this tunnel will be shown in the Web Sessions list.
+
+Secure Protocol: Tls12
+Cipher: Aes128 128bits
+Hash Algorithm: Sha256 ?bits
+Key Exchange: ECDHE_RSA (0xae06) 255bits
+
+== Server Certificate ==========
+[Subject]
+  CN=cn-hangzhou.oss.aliyuncs.com, O="Alibaba (China) Technology Co., Ltd.", L=HangZhou, S=ZheJiang, C=CN
+
+[Issuer]
+  CN=GlobalSign GCC R3 OV TLS CA 2024, O=GlobalSign nv-sa, C=BE
+
+[Serial Number]
+  2397384C371478319169AC22
+
+[Not Before]
+  2026/1/6 11:11:56
+
+[Not After]
+  2027/2/7 11:11:55
+
+[Thumbprint]
+  88DF587DD5146EBA464860192F99B2E871CE0C99
+
+[SubjectAltNames]
+cn-hangzhou.oss.aliyuncs.com, *.oss-cn-hangzhou.aliyuncs.com, *.img-cn-hangzhou-internal.aliyuncs.com, *.oss-cn-hzjbp-a-internal.aliyuncs.com, *.oss-cn-hangzhou-internal.aliyuncs.com, *.oss-cn-hangzhou-diku-internal.aliyuncs.com, *.cn-hangzhou.oss.aliyuncs.com, *.oss-enet-cm.aliyuncs.com, *.cn-hangzhou.oss-internal-cross.aliyun-inc.com, *.oss-cn-hangzhou-am101.aliyuncs.com, *.oss-internal.aliyuncs.com, *.oss-accelerate.aliyuncs.com, *.oss-cn-hzjbp-b-internal.aliyuncs.com, *.img-cn-hangzhou.aliyuncs.com, *.oss-accelerate-overseas.aliyuncs.com, *.oss-cn-hangzhou-zmf.aliyuncs.com, *.oss-cn-hangzhou-hsa.aliyuncs.com, *.aliyuncs.com, *.oss.aliyuncs.com, *.oss-cn-hangzhou-cross.aliyuncs.com, *.vpc100-oss-cn-hangzhou.aliyuncs.com, *.oss-cn-hzfinance.aliyuncs.com, *.oss-enet.aliyuncs.com, *.cn-hangzhou.oss-internal.aliyuncs.com, *.oss-enet-cu.aliyuncs.com, *.oss-enet-ct.aliyuncs.com, *.oss-cn-hangzhou-zmf-internal.aliyuncs.com, *.oss-cn-hzfinance-internal.aliyuncs.com, *.cn-hangzhou-finance.oss.aliyuncs.com, *.oss-cn-hzjbp-b-console.aliyuncs.com, *.oss-cache-cn-hangzhou-j.aliyuncs.com, *.oss-cache-cn-hangzhou-j-cross.aliyuncs.com, *.oss-enet-cn-east.aliyuncs.com, *.cn-hangzhou-vpc.oss.aliyuncs.com, *.oss-accesspoint.aliyuncs.com, *.oss-cn-hangzhou.oss-accesspoint.aliyuncs.com, *.oss-cn-hangzhou-internal.oss-accesspoint.aliyuncs.com, *.cn-hangzhou.oss-console.aliyuncs.com, *.s3.oss-cn-hangzhou.aliyuncs.com, *.s3.oss-cn-hangzhou-internal.aliyuncs.com, *.cn-hangzhou.mgw.aliyuncs.com, *.oss.cn-hangzhou.privatelink.aliyuncs.com, *.oss-cn-hangzhou.oss-object-process.aliyuncs.com, *.oss-cn-hangzhou-internal.oss-object-process.aliyuncs.com, *.s3.oss-accelerate.aliyuncs.com, *.s3.oss-accelerate-overseas.aliyuncs.com, *.cn-hangzhou-cross.mgw.aliyuncs.com, *.oss-vpc.aliyuncs.com, *.cn-hangzhou.oss-vpc.aliyuncs.com, *.cn-hangzhou.osscloud.cn, *.osscloud.cn, *.enet.osscloud.cn, *.enet.oss-svc-cn.cn, *.cn-hangzhou.oss-vectors.aliyuncs.com, *.cn-hangzhou-internal.oss-vectors.aliyuncs.com, *.oss-vectors.aliyuncs.com
+
+
+------------------------------------------------------------------
+
+PUT https://winrobot-pri-a.oss-cn-hangzhou.aliyuncs.com/robots/robot-676e7539-d345-407b-b09a-e0ec066c8984/v-1/package.bot?Expires=1770460920&OSSAccessKeyId=LTAI5t93vfGfysekhtsfrZU9&Signature=F5AbhKSfpOzVwzCGGNwxcsU6gPo%3D HTTP/1.1
+Connection: Keep-Alive
+Accept: */*
+Accept-Language: zh-cn
+Referer: https://winrobot-pri-a.oss-cn-hangzhou.aliyuncs.com/robots/robot-676e7539-d345-407b-b09a-e0ec066c8984/v-1/package.bot?Expires=1770460920&OSSAccessKeyId=LTAI5t93vfGfysekhtsfrZU9&Signature=F5AbhKSfpOzVwzCGGNwxcsU6gPo%3D
+User-Agent: Mozilla/4.0 (compatible; MSIE 9.0; Windows NT 6.1)
+Content-Length: 4307
+Host: winrobot-pri-a.oss-cn-hangzhou.aliyuncs.com
+
+PK   TU‰P.”[¼Y   f     imagesV2.xmlUT Ÿ‹Ž^ñ‡iñ‡iEËA
+€  À{ÐdïeÝB²Þ"¶‰ n¬öûìÔy˜y-1ˆ9{JÆ~ ÉÒæ“Óp{7Áº´ÍÌxPö'ñ#êHY|%¥ÆaÆ€¶ª´Ä_ÿX^PK   VWF\X÷\ J  E  	  main.pybxUT âX…iñ‡iñ‡iEºþøÈ÷Ç      Äº«q`ÓNyâ„ŒáÆ@áý›/Öõ¶{É@qùÂÊÚÛƒ¨¡´&1¢æuþ»ÞSM0ñSÝ¥¶u|TÁþ6û¤e•¹3 ½¯röŠ€AXhÔx»¤îÒZ¿§Yït£¼ã
+ÜÜR¯BqVé¼ßŠ÷º6²"TOW¹7®–Þ?h­Á¥¿ª¿êÌŽmê§CsÆ9 …ÿ4ÑìË·lýÓ¶¸„Z¹¼¡!8à‰Np¨òÙTUfñS›÷UûurÔì6ý3Œ«%
+°æg‰ïAX!”oô«êÔ®þ@ç9^¸¦¥Ÿ‚ºEeG§¾VFV:ý[;UNëtM…ÔÆ9f£ñ>á ¤»¤–À"¯«
+<Pvâ¨­EkÊ}y‡+”I‘ž÷ñŒ¶¯ª>hà‰Np¨ò|Œ8È¤xÑPK   ‘G\Êþ/Íþ  ‡    package.jsonUT ñ‡iñ‡iñ‡i…S=oÛ0Ýó+Í1 ;þìÚ.]Šm— NÒÉ=˜	òèÔ2t)2hQ K×  ÐtèŸIœþŒR²KBŒjÓ{ïŽïŽg=÷ÖR¼è“é§ã£y?=û£p÷ãp}1	'“d6Ÿ‚ÃmM9–5ÿ|~¼ùÍh8º¿ûêþ¢ÍåõæûíýÝå0N~ý‡›átsuÝÌ6W·ƒáÃÅ—pðxóÍ÷¢D®Wa…¨‘jC¼ŠaaÚ*#3>Ï£‹§ YÂ£]ÿqÍdl]‘ Ã>öÆ'5—¢I4)¦®M*k›ÔDàZãú@µEÊ1ƒ~4JQ¾©·ç+ƒf[Jƒ¨ð°–±äˆ×ªƒRž wæŠx%2íŒ˜	yZîéø¬úo]V£÷VK÷qK*ªP| cA4©°À´=VE,´´ª­tT1ç'cQ%©ìyxš Øñ£.@D)ºÃR,j¨Ø
+öñ&,õÿêÁ²Ü«Q æÕ2†XÊ¥»aó¢Å¹¦¥v×SîÏ…!xæP«ª»k†ƒL¬	³j	žBðö¥ï¦Ê»ˆy'"gY¯G.A&±†eþš1/]7b² ì½­8í"»e‚f(woiþñm
+ü#F“[Á»Ýc>8ÿPK   UWF\™×»5ƒ  ˜  
+  package.pyUT àX…iñ‡iñ‡i•SßoÒ@oÒÿá‚-†LßLLŒñe¯›ñe1mƒ5¶”Ü{CÙ‚ÓmˆS‡ñW¢bâpKtNðÇØ+åÉÁ»¶ÊÌ’’»ëçó¹ïçû#‹‰‚S«Ûý¦ÛŒ^´i§1l´œçÇÎ^{x¸EŸ¼u+½?ç»ôÓ#wÿ'­ÐíÊðû»ßå‡~»EOÊ´örT­ñCãþØr:uç jwO‡G;¾ˆ(ˆ‚ªª…M²nåEá
+ôê{ÃÏÇöYçv‘+Ïî•wœ§_è«–(´ô-“0M,$K>JŠÏX6s<âfŸVjs4t“ý+%÷eìîGªóú+í} çµÕ¼fBœ$%Â´§}M„ÄV¥*‰B`‰ÈRÈ
+¯°;»î IŸÎ½¥ˆ!ÂÉ’K—¼&µI –¥	OŠ/'íþ°©ÊDaCCº–2 ^“r
+Û,I÷ÁM°tíúT2§ˆ`1Ó«¦(Äx‰BY&(¥,Ö
+èfÁB¬ûUöÂXæeˆœM“H7u¢o@<¦ß®¾£§I¬IXZ¢PpÆ´2E" XÞF”‚FÖ™C'ù*™Ñ¯‹¬(YÝ€ŠÂJ3á¯yhžœa¥4ËÞç PóHÙÇHä²Çá¸hs…è‹fC
+ÿe`„ÉC‹ßÀ/©|aw÷ý£göÙ‘_$g·JÛ‡~ïDç…S®‚[i&à‚	Ð=p@Q¨ãÐT6ºê]žæð$ÜAƒ6ß„êôÛ/÷äýL|ÐŒsßËØáÌàýÓ§7¸|^˜ìÿu©FhpFv¡Íyež˜'”U>Ú¨¬å‹/…õlÐáP1øt—óÆûPK   n‘G\äÍ‰
+~   ˜     package.sigstoreUT Ï‡iñ‡iñ‡i%ÍMÂ @á»Ìš0üŸÃ0˜&´4m­1Æ»[ãþ{yo8¦™÷ƒæ(ï¥±QÖm£Œ~{­I	[å
+h}<wHË£wût_®6Æ†d«ÓV‘n-W£$ê mlÆaÎð—§þ}ˆb®±fE¬é"1`sèK1>_PK   NWF\¦:t×   )    selectorsV2.xmlUT ÒX…iñ‡iñ‡iÒ;Â0Àñ]ð;”ìZÝD¬âì àÒ³â¥Þ¥>¾½ÏÃø¨uÜÿ—ƒÑä¸uÉˆ­ÇLõ»=• Ÿ[,2U…ug &ãvkDPz¶ÁÓ)¹äá1STêaš280—Aj<zL	
+ø,|	¤¯‡ÛXÚƒu¹Ñ”×çRˆ0ƒ¶ÈõB
+èÃ´E‘8š¯lØÔ³gm[ü_2±€y“"Ú6kDQ»]¥Ýï¹'b
+€–õ*Š¾¸9Ý®ü‹?Z¹ÅóïÕR¼‹Æ¥o¡ºþùôùéÇgPK   VWF\„mË!.   5     settings.jsonUT âX…iñ‡iñ‡i«æåRPP*É/ÈL-ÍLQ²RÈ+ÍÉÑ‹:ççä¤¦§º'æ¦zæ¥åCåx¹jPK   UWF\² ]Ã        __init__.pyUT àX…iñ‡iñ‡iK+ÊÏUÐËÌ-È/*Q(HLÎNLO PK     ‘G\              .dev/UT ñ‡iñ‡iñ‡iPK   VWF\ÂBíð  l    .dev/main.flow.jsonUT âX…iñ‡iñ‡iÁÇ¢k@  Ð²ˆÄâ-0ztÑvÑF%W|ý;'bEVíeS©¸cu3Jiu,ËÊM~kÀ”cfõ)û¤K˜ŸÚ­1'5Æ<vèÙÐä’8™yßµiã ÏéúE‰&>ýÌ@§kuÊÊåL]b_²îÞ¿^Iä¾¥úÕÁT­2^U´˜ùµ$×è½h5YC‚âÜGË5n¹¿+;Êgû'Çó’¬'ì±+|Çé»yÝå8I9oðËÎfÔÁPfû/›)ÕÙ+>ÎƒèYç çÐÖwIHöy:¹ú´Ú®úâ“bˆÚþlñPæ[
+µ+¾=ÅÜ4oæf »«­‰Ù9µ¸‚ëg‰¾sÃ]³£™'[<æ†N¿::>Ç¹Î†`›z<¨÷d|¥ÝKÞÒ¥–.n!}@=t#™êû£BœÅþ‚‡½õ²ê-S,Åqm[¡Ûx²yÊ;¬$	ñDDçEÔ-4ñÅük™×¦›ƒEØñC‘!{ö"Ú—~RR-¼ÀÔ‡ø†‰7CÃ¢m66ÂøÜ®í¯ä¿žä«‘´pasó{S¤~ä{hÚˆfÈßýõÔ(/¡oWÀ4$Öò÷<,zàÙ¦3Œ:x+°ô¦*Z Ÿ\mJ73¸Ù¿ÿPK   VWF\›{        .dev/main.pdbUT âX…iñ‡iñ‡i34Ð14  PK   p‘G\ °‡   Ö     .dev/workspace.state.jsonUT Ò‡iñ‡iñ‡i«æåRPPÊ/HÍKMqËÉ//V²Rˆ‰Es3ó”@ìX°ªÄä’Ì²T§ü’’üÜ€Ä¼Ô Z¥§­ÍÏ·,xºk²²"Q Y°‰¤¢ÔÄì€üÌ¼$;ª!P¤Ã/17UXÊ'3/¤'¯4'!ê”“Ÿœí™6,"Zv,/W- PK     ‘G\            
+  .dev/icon/UT ñ‡iñ‡iñ‡iPK   TU‰P.”[¼Y   f    	         €    imagesV2.xmlUT Ÿ‹Ž^PK   VWF\X÷\ J  E  	 	         €”   main.pybxUT âX…iPK   ‘G\Êþ/Íþ  ‡   	         €  package.jsonUT ñ‡iPK   UWF\™×»5ƒ  ˜  
+ 	         €O  package.pyUT àX…iPK   n‘G\äÍ‰
+~   ˜    	         €  package.sigstoreUT Ï‡iPK   NWF\¦:t×   )   	         €È  selectorsV2.xmlUT ÒX…iPK   VWF\„mË!.   5    	         €Ý  settings.jsonUT âX…iPK   UWF\² ]Ã       	         €G	  __init__.pyUT àX…iPK     ‘G\             	        ÀA—	  .dev/UT ñ‡iPK   VWF\ÂBíð  l   	         €Ë	  .dev/main.flow.jsonUT âX…iPK   VWF\›{       	         €ý  .dev/main.pdbUT âX…iPK   p‘G\ °‡   Ö    	         €@  .dev/workspace.state.jsonUT Ò‡iPK     ‘G\            
+ 	        ÀA  .dev/icon/UT ñ‡iPK      u  H    
+HTTP/1.1 200 OK
+Server: AliyunOSS
+Date: Sat, 07 Feb 2026 10:12:01 GMT
+Content-Length: 0
+Connection: keep-alive
+x-oss-request-id: 69870FF1D5496C31374FA7A5
+x-oss-process-status: ewogICAgImNvZGUiOiAiU3VjY2VzcyIsCiAgICAibWVzc2FnZSI6ICJOb3RpZmljYXRpb25TdWNjZWVkIiwKICAgICJ0eXBlIjogIkV2ZW50Tm90aWZpY2F0aW9uIiwKICAgICJ2ZXJzaW9uIjogIjEuMCJ9
+x-oss-event-status: eyJSZXN1bHQiOiAiT2sifQ==
+ETag: "D9085DB179BD388F408826C83D69FCDF"
+x-oss-hash-crc64ecma: 11221794262451894820
+Content-MD5: 2QhdsXm9OI9AiCbIPWn83w==
+x-oss-version-id: CAEQThiBgIDKxqze4RkiIDEzZThhOTVhMzhhODQ2MzhiZjg4OTcxZTIxZjFkZWYy
+x-oss-server-time: 35
+
+
+
+------------------------------------------------------------------
+
+CONNECT winrobot-pri-a.oss-cn-hangzhou.aliyuncs.com:443 HTTP/1.1
+Host: winrobot-pri-a.oss-cn-hangzhou.aliyuncs.com:443
+User-Agent: Mozilla/4.0 (compatible; MSIE 9.0; Windows NT 6.1)
+
+
+HTTP/1.1 200 Connection established
+
+
+
+------------------------------------------------------------------
+
+POST https://api.winrobot360.com/api/client/app/file/assignUploadUrl HTTP/1.1
+Connection: Keep-Alive
+Content-Type: application/json; charset=utf-8
+Accept: */*
+Accept-Language: zh-cn
+Authorization: bearer e7cd6de6-ced9-4588-aa4a-1a0afc30480a
+Referer: https://api.winrobot360.com/api/client/app/file/assignUploadUrl
+User-Agent: Mozilla/4.0 (compatible; MSIE 9.0; Windows NT 6.1)
+Content-Length: 93
+Host: api.winrobot360.com
+
+{"appId":"676e7539-d345-407b-b09a-e0ec066c8984","appType":"app","version":"","isBot":"false"}
+HTTP/1.1 200 OK
+Date: Sat, 07 Feb 2026 10:12:01 GMT
+Content-Type: application/json
+Transfer-Encoding: chunked
+Connection: keep-alive
+Vary: Accept-Encoding
+Vary: Origin
+Vary: Access-Control-Request-Method
+Vary: Access-Control-Request-Headers
+X-Xybot-Trace-Id: 11e28f84f8604a9b98f57c658f1ad27f.123.17704591213750039
+x-b3-traceid: 11e28f84f8604a9b98f57c658f1ad27f.123.17704591213750039
+Vary: Origin
+Vary: Access-Control-Request-Method
+Vary: Access-Control-Request-Headers
+X-Xss-Protection: 1; mode=block
+X-Permitted-Cross-Domain-Policies: none
+X-Frame-Options: DENY
+X-Download-Options: noopen
+X-Content-Type-Options: nosniff
+Content-Security-Policy: default-src 'self' https:; font-src 'self' https: data:; img-src 'self' https: data:; object-src 'none'; script-src 'self' 'unsafe-inline' https://*.alipay.com/; style-src 'self' https: 'unsafe-inline';
+Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+Pragma: no-cache
+Expires: 0
+Strict-Transport-Security: max-age=15724800; includeSubDomains
+Referrer-Policy: no-referrer
+Server: YdServer_v1.2.0
+
+282
+{"data":{"fileKey":"robots/robot-676e7539-d345-407b-b09a-e0ec066c8984/v-1/package.json","uploadUrl":"https://winrobot-pri-a.oss-cn-hangzhou.aliyuncs.com/robots/robot-676e7539-d345-407b-b09a-e0ec066c8984/v-1/package.json?Expires=1770460921&OSSAccessKeyId=LTAI5t93vfGfysekhtsfrZU9&Signature=vIwu9RlU2CAE2oyUrJES2k%2FcWX4%3D","readUrl":"https://winrobot-pri-a.oss-cn-hangzhou.aliyuncs.com/robots/robot-676e7539-d345-407b-b09a-e0ec066c8984/v-1/package.json?Expires=1770502321&OSSAccessKeyId=LTAI5t93vfGfysekhtsfrZU9&Signature=qazyaZPTDN3gYAEJ5xyamGGzqig%3D","fileKeyMd5":"8dc98568ca9a537fc30d87b3592e2121","headers":{}},"code":200,"success":true}
+0
+
+
+
+------------------------------------------------------------------
+
+PUT https://winrobot-pri-a.oss-cn-hangzhou.aliyuncs.com/robots/robot-676e7539-d345-407b-b09a-e0ec066c8984/v-1/package.json?Expires=1770460921&OSSAccessKeyId=LTAI5t93vfGfysekhtsfrZU9&Signature=vIwu9RlU2CAE2oyUrJES2k%2FcWX4%3D HTTP/1.1
+Connection: Keep-Alive
+Accept: */*
+Accept-Language: zh-cn
+Referer: https://winrobot-pri-a.oss-cn-hangzhou.aliyuncs.com/robots/robot-676e7539-d345-407b-b09a-e0ec066c8984/v-1/package.json?Expires=1770460921&OSSAccessKeyId=LTAI5t93vfGfysekhtsfrZU9&Signature=vIwu9RlU2CAE2oyUrJES2k%2FcWX4%3D
+User-Agent: Mozilla/4.0 (compatible; MSIE 9.0; Windows NT 6.1)
+Content-Length: 1167
+Host: winrobot-pri-a.oss-cn-hangzhou.aliyuncs.com
+
+{
+    "uuid": "676e7539-d345-407b-b09a-e0ec066c8984",
+    "name": "æ©ä½ºÐ©test_æµœæˆ£ç¸¼_éŽºãƒ¦æ•¹æµœ?026éªž?2éˆ?7éƒ?18éƒ?2é’?1ç»‰?,
+    "icon": null,
+    "version": "1",
+    "tags": null,
+    "software": null,
+    "software_title": null,
+    "package_version": 5,
+    "feature_list": [2, 5],
+    "description": null,
+    "instruction": "",
+    "use_latest_pip": false,
+    "videoName": "",
+    "startup": "main",
+    "robot_type": "app",
+    "activity_code": null,
+    "flows": [{
+        "name": "main",
+        "filename": "main",
+        "kind": "Visual",
+        "opened": false,
+        "groupName": null
+    }],
+    "flow_groups": [],
+    "variables": [],
+    "external_dependencies": [],
+    "internaldependencies": [],
+    "selectordependencies": [],
+    "internalautodependencies": [],
+    "ipaasDependencies": [],
+    "databook_columns": [],
+    "authority": "use",
+    "internalautoupgrade": false,
+    "isbrief": false,
+    "uia_type": "PC",
+    "persist_databook": false,
+    "encrypt_bot": false,
+    "customItems": {
+        "gifUrl": null,
+        "videoUrl": "",
+        "imageUrl": "",
+        "imageName": ""
+    },
+    "terminalTags": null
+}
+HTTP/1.1 200 OK
+Server: AliyunOSS
+Date: Sat, 07 Feb 2026 10:12:01 GMT
+Content-Length: 0
+Connection: keep-alive
+x-oss-request-id: 69870FF1D5496C3137C2A8A5
+x-oss-process-status: ewogICAgImNvZGUiOiAiU3VjY2VzcyIsCiAgICAibWVzc2FnZSI6ICJOb3RpZmljYXRpb25TdWNjZWVkIiwKICAgICJ0eXBlIjogIkV2ZW50Tm90aWZpY2F0aW9uIiwKICAgICJ2ZXJzaW9uIjogIjEuMCJ9
+x-oss-event-status: eyJSZXN1bHQiOiAiT2sifQ==
+ETag: "31D379833B401719D3A606FE54A4704A"
+x-oss-hash-crc64ecma: 3343404666985976849
+Content-MD5: MdN5gztAFxnTpgb+VKRwSg==
+x-oss-version-id: CAEQThiBgICdx6ze4RkiIDZkMDE0ZmIwOGRhNjRhZDJiOGVmYWNhMzk4NjRlZGQ3
+x-oss-server-time: 21
+
+
+
+------------------------------------------------------------------
+
+POST https://api.winrobot360.com/api/client/app/develop/create HTTP/1.1
+Connection: Keep-Alive
+Content-Type: application/json; charset=utf-8
+Accept: */*
+Accept-Language: zh-cn
+Authorization: bearer e7cd6de6-ced9-4588-aa4a-1a0afc30480a
+Referer: https://api.winrobot360.com/api/client/app/develop/create
+User-Agent: Mozilla/4.0 (compatible; MSIE 9.0; Windows NT 6.1)
+Content-Length: 705
+Host: api.winrobot360.com
+
+{"appId":"676e7539-d345-407b-b09a-e0ec066c8984","appPackage":{"activities":[],"appFlowParamList":[],"appIcon":"","appType":"app","customItems":{"gifUrl":"","imageName":"","imageUrl":"","uiaType":"PC","videoUrl":""},"description":"","elementLibraryCodes":[],"enableViewSource":"false","externalDependencies":[],"instruction":"","internalDependencies":[],"internalautodependencies":[],"ipaasDependencies":[],"name":"è¿ç§»test_äº‘è¿_æŽ¥æ”¶äºŽ2026å¹´02æœˆ07æ—¥ 18æ—¶12åˆ†01ç§’","packageCode":"","statistics":{"blockCount":1,"flowCount":1,"magicBlockCount":0,"sourceLineCount":0},"uiTags":"","uiaType":"PC","videoUrl":""},"elementLibraryStatus":0,"groupId":"","packageMd5":"8dc98568ca9a537fc30d87b3592e2121"}
+HTTP/1.1 200 OK
+Date: Sat, 07 Feb 2026 10:12:01 GMT
+Content-Type: application/json
+Transfer-Encoding: chunked
+Connection: keep-alive
+Vary: Accept-Encoding
+Vary: Origin
+Vary: Access-Control-Request-Method
+Vary: Access-Control-Request-Headers
+X-Xybot-Trace-Id: d58012c412aa4139886d9953379fdd51.76.17704591215867073
+x-b3-traceid: d58012c412aa4139886d9953379fdd51.76.17704591215867073
+Vary: Origin
+Vary: Access-Control-Request-Method
+Vary: Access-Control-Request-Headers
+X-Xss-Protection: 1; mode=block
+X-Permitted-Cross-Domain-Policies: none
+X-Frame-Options: DENY
+X-Download-Options: noopen
+X-Content-Type-Options: nosniff
+Content-Security-Policy: default-src 'self' https:; font-src 'self' https: data:; img-src 'self' https: data:; object-src 'none'; script-src 'self' 'unsafe-inline' https://*.alipay.com/; style-src 'self' https: 'unsafe-inline';
+Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+Pragma: no-cache
+Expires: 0
+Strict-Transport-Security: max-age=15724800; includeSubDomains
+Referrer-Policy: no-referrer
+Server: YdServer_v1.2.0
+
+1b
+{"code":200,"success":true}
+0
+
+
+
+------------------------------------------------------------------
+
