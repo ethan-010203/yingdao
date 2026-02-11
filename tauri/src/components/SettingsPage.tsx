@@ -231,7 +231,7 @@ export function SettingsPage() {
                                 <div className="space-y-2">
                                     <h1 className="text-3xl font-bold tracking-tight">影刀账号管理工具</h1>
                                     <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                                        <span className="text-sm">v1.1.2</span>
+                                        <span className="text-sm">v1.1.3</span>
                                         <span>•</span>
                                         <span className="text-sm">Professional Account Management</span>
                                     </div>
