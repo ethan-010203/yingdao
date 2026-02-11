@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Search, Trash2, RefreshCw, ChevronLeft, ChevronRight, Loader2, User, AlertTriangle } from "lucide-react"
+import { useTranslation } from "@/lib/i18n"
 
 interface Account {
     id: string
@@ -51,6 +52,7 @@ export function AccountDetailDialog({
     onDeleteAccount,
     onTokenExpired,
 }: AccountDetailDialogProps) {
+    const { t } = useTranslation()
     const [flows, setFlows] = useState<CloudFlow[]>([])
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -178,10 +180,10 @@ export function AccountDetailDialog({
             setDeleteDialogOpen(false)
 
             if (successCount > 0) {
-                toast.success(`成功删除 ${successCount} 个流程`)
+                toast.success(t("common.success").replace("{count}", String(successCount)))
             }
         } catch (err) {
-            toast.error(`删除失败: ${String(err)}`)
+            toast.error(`${t("common.error")}: ${String(err)}`)
             setError(String(err))
         } finally {
             setDeleting(false)
@@ -205,17 +207,17 @@ export function AccountDetailDialog({
                         <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center rounded-lg">
                             <div className="flex flex-col items-center gap-2">
                                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                <span className="text-sm text-muted-foreground">加载中...</span>
+                                <span className="text-sm text-muted-foreground">{t("common.loading")}</span>
                             </div>
                         </div>
                     )}
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <User className="h-5 w-5" />
-                            {account?.name || "账号详情"}
+                            {account?.name || t("accounts.detail")}
                         </DialogTitle>
                         <DialogDescription>
-                            用户名: {account?.username} · 共 {flows.length} 个流程
+                            {t("login.username")}: {account?.username} · {t("accounts.flow.total").replace("{count}", String(flows.length))}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -224,7 +226,7 @@ export function AccountDetailDialog({
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
-                                placeholder="搜索流程..."
+                                placeholder={t("common.search")}
                                 value={searchQuery}
                                 onChange={(e) => {
                                     setSearchQuery(e.target.value)
@@ -248,13 +250,13 @@ export function AccountDetailDialog({
                             disabled={selectedIds.size === 0}
                         >
                             <Trash2 className="h-4 w-4 mr-1" />
-                            删除 ({selectedIds.size})
+                            {t("common.delete")} ({selectedIds.size})
                         </Button>
                     </div>
 
                     {/* 总数显示 */}
                     <div className="text-sm text-muted-foreground pb-2">
-                        共 {flows.length} 个流程{searchQuery && filteredFlows.length !== flows.length && `，筛选后 ${filteredFlows.length} 个`}
+                        {t("accounts.flow.total").replace("{count}", String(flows.length))}{searchQuery && filteredFlows.length !== flows.length && `，${t("common.search")} ${filteredFlows.length}`}
                     </div>
 
                     {/* 流程列表 */}
@@ -270,7 +272,7 @@ export function AccountDetailDialog({
                             </div>
                         ) : filteredFlows.length === 0 ? (
                             <div className="flex items-center justify-center h-48 text-muted-foreground">
-                                {searchQuery ? "未找到匹配的流程" : "暂无流程"}
+                                {searchQuery ? t("common.error") : t("common.loading")}
                             </div>
                         ) : (
                             <table className="w-full">
@@ -282,8 +284,8 @@ export function AccountDetailDialog({
                                                 onCheckedChange={toggleSelectAll}
                                             />
                                         </th>
-                                        <th className="p-3 text-left font-medium">流程名称</th>
-                                        <th className="w-48 p-3 text-left font-medium">更新时间</th>
+                                        <th className="p-3 text-left font-medium">{t("accounts.flow.name")}</th>
+                                        <th className="w-48 p-3 text-left font-medium">{t("accounts.flow.update_time")}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -317,10 +319,10 @@ export function AccountDetailDialog({
                     <div className="flex items-center justify-between pt-2 border-t">
                         <div className="flex items-center gap-4">
                             <span className="text-sm text-muted-foreground">
-                                第 {currentPage} 页，共 {totalPages} 页
+                                {t("common.pagination.page").replace("{page}", String(currentPage)).replace("{total}", String(totalPages))}
                             </span>
                             <div className="flex items-center gap-1">
-                                <span className="text-sm text-muted-foreground">每页</span>
+                                <span className="text-sm text-muted-foreground">{t("common.pagination.per_page")}</span>
                                 <select
                                     value={pageSize}
                                     onChange={(e) => {
@@ -333,7 +335,7 @@ export function AccountDetailDialog({
                                     <option value={20}>20</option>
                                     <option value={50}>50</option>
                                 </select>
-                                <span className="text-sm text-muted-foreground">条</span>
+                                <span className="text-sm text-muted-foreground">{t("common.pagination.unit")}</span>
                             </div>
                         </div>
                         <div className="flex items-center gap-1">
@@ -359,7 +361,7 @@ export function AccountDetailDialog({
                     {/* 底部操作 */}
                     <div className="flex justify-end pt-4 border-t">
                         <Button variant="outline" onClick={() => onOpenChange(false)}>
-                            关闭
+                            {t("common.close")}
                         </Button>
                     </div>
                 </DialogContent>
@@ -369,22 +371,22 @@ export function AccountDetailDialog({
             <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>确认删除</AlertDialogTitle>
+                        <AlertDialogTitle>{t("common.delete")}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            确定要删除选中的 {selectedIds.size} 个流程吗？
+                            {t("accounts.delete.flows.confirm").replace("{count}", String(selectedIds.size))}
                             <br />
-                            <span className="text-muted-foreground">流程将被移入回收站，可在影刀网页版中恢复。</span>
+                            <span className="text-muted-foreground">{t("accounts.delete.flows.desc")}</span>
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>取消</AlertDialogCancel>
+                        <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleDeleteFlows}
                             disabled={deleting}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
                             {deleting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-                            确认删除
+                            {t("common.confirm")}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -394,20 +396,20 @@ export function AccountDetailDialog({
             <AlertDialog open={deleteAccountDialogOpen} onOpenChange={setDeleteAccountDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>确认删除账号</AlertDialogTitle>
+                        <AlertDialogTitle>{t("accounts.delete.confirm").replace("{name}", account?.name || "")}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            确定要删除账号 "{account?.name}" 吗？
+                            {t("accounts.delete.confirm").replace("{name}", account?.name || "")}
                             <br />
-                            <span className="text-muted-foreground">这只会从本地移除账号配置，不会影响云端数据。</span>
+                            <span className="text-muted-foreground">{t("accounts.delete.desc")}</span>
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>取消</AlertDialogCancel>
+                        <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleDeleteAccount}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
-                            确认删除
+                            {t("common.confirm")}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

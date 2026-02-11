@@ -4013,28 +4013,6 @@ checksum = "61c41af27dd6d1e27b1b16b489db798443478cef1f06a660c96db617ba5de3b1"
 
 [[package]]
 name = "tauri"
-version = "1.0.0"
-dependencies = [
- "base64 0.22.1",
- "chrono",
- "dirs-next",
- "futures-util",
- "rand 0.8.5",
- "reqwest 0.12.28",
- "rsa",
- "serde",
- "serde_json",
- "tauri 2.10.2",
- "tauri-build",
- "tauri-plugin-opener",
- "tokio",
- "uuid",
- "walkdir",
- "zip",
-]
-
-[[package]]
-name = "tauri"
 version = "2.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "463ae8677aa6d0f063a900b9c41ecd4ac2b7ca82f0b058cc4491540e55b20129"
@@ -4178,7 +4156,7 @@ dependencies = [
  "schemars 0.8.22",
  "serde",
  "serde_json",
- "tauri 2.10.2",
+ "tauri",
  "tauri-plugin",
  "thiserror 2.0.18",
  "url",
@@ -5602,6 +5580,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "388c44dc09d76f1536602ead6d325eb532f5c122f17782bd57fb47baeeb767e2"
 dependencies = [
  "lzma-sys",
+]
+
+[[package]]
+name = "yingdao-manager"
+version = "1.1.5"
+dependencies = [
+ "base64 0.22.1",
+ "chrono",
+ "dirs-next",
+ "futures-util",
+ "rand 0.8.5",
+ "reqwest 0.12.28",
+ "rsa",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-opener",
+ "tokio",
+ "uuid",
+ "walkdir",
+ "zip",
 ]
 
 [[package]]

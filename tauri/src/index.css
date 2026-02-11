@@ -89,6 +89,33 @@
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
     }
+
+    /* 全局毛玻璃效果增强 - 仅在深色模式下生效 */
+    .dark .bg-card,
+    .dark [class*="bg-card"],
+    .dark .rounded-xl.border.bg-card {
+        background-color: hsl(var(--card) / 0.4) !important;
+        backdrop-filter: blur(16px) saturate(120%);
+        -webkit-backdrop-filter: blur(16px) saturate(120%);
+    }
+
+    .dark .bg-popover,
+    .dark [class*="bg-popover"] {
+        background-color: hsl(var(--popover) / 0.7) !important;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+    }
+
+    /* 对弹窗特别处理 */
+    .dark [role="dialog"],
+    .dark .fixed.inset-0.z-50.bg-background\/80 {
+        backdrop-filter: blur(8px);
+    }
+
+    .dark .border-border,
+    .dark [class*="border-border"] {
+        border-color: hsl(var(--border) / 0.2) !important;
+    }
 }
 
 /* ===== 动画 ===== */

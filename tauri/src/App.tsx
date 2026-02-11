@@ -14,21 +14,24 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { SettingsPage } from "@/components/SettingsPage";
 import { useConfig } from "@/contexts/ConfigContext";
+import ShinyText from "@/components/ui/ShinyText";
+import { useTranslation } from "@/lib/i18n";
 import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Search,
+  Trash2,
+  X,
+  RefreshCw,
   FolderSync,
   Users,
-  Search,
-  RefreshCw,
-  Trash2,
-  ArrowRight,
-  ArrowLeft,
-  Check,
-  X,
   CloudDownload,
   HardDrive,
   Plus,
   Loader2,
 } from "lucide-react";
+import Stepper, { Step } from "@/components/ui/Stepper";
 
 // 类型定义
 // 类型定义
@@ -72,6 +75,7 @@ type LocalStep = "list" | "target" | "migrating" | "result";
 type CloudStep = "source" | "list" | "target" | "migrating" | "result";
 
 function App() {
+  const { t } = useTranslation();
   // Auth
   const { user, signOut, username, isAdmin } = useAuth();
   const { accounts, settings, saveAccounts, updateSettings } = useConfig();
@@ -139,7 +143,7 @@ function App() {
     const acc = accounts.find(a => a.id === id);
     const newAccounts = accounts.filter(a => a.id !== id);
     await saveAccounts(newAccounts); // Context method
-    toast.success(`账号 "${acc?.name || '未命名'}" 已删除`);
+    toast.success(t("common.success"));
     // 记录操作日志
     if (user?.id && acc) {
       await appendOperationLog(user.id, `删除了账号「${acc.username}」`)
@@ -152,7 +156,7 @@ function App() {
         a.id === editingAccount.id ? { ...a, ...data } : a
       );
       await saveAccounts(newAccounts);
-      toast.success(`账号 "${data.name}" 已更新`);
+      toast.success(t("common.success"));
       // 记录操作日志
       if (user?.id) {
         await appendOperationLog(user.id, `编辑了账号「${data.username}」`)
@@ -164,7 +168,7 @@ function App() {
       };
       const newAccounts = [...accounts, newAcc];
       await saveAccounts(newAccounts);
-      toast.success(`账号 "${data.name}" 添加成功`);
+      toast.success(t("common.success"));
       // 记录操作日志
       if (user?.id) {
         await appendOperationLog(user.id, `添加了账号「${data.username}」`)
@@ -231,12 +235,12 @@ function App() {
 
   const refreshLocalFlows = async () => {
     setLoading(true);
-    setLoadingText("正在扫描本地流程...");
+    setLoadingText(t("migrate.local.scanning"));
     try {
       const flows: LocalFlow[] = await invoke("get_local_flows");
       setLocalFlows(flows);
     } catch (e) {
-      toast.error(`扫描失败: ${e}`);
+      toast.error(`${t("common.error")}: ${e}`);
     }
     setLoading(false);
     setLoadingText("");
@@ -244,7 +248,7 @@ function App() {
 
   const localNextToTarget = () => {
     if (selectedLocalIds.size === 0) {
-      toast.error("请先选择要迁移的流程");
+      toast.error(t("common.error"));
       return;
     }
     setLocalStep("target");
@@ -298,7 +302,7 @@ function App() {
         await appendOperationLog(user.id, `本地迁移 ${successCount}/${selectedFlows.length} 个流程到账号「${creds.name}」：${flowNames}`)
       }
     } catch (e) {
-      toast.error(`操作失败: ${e}`);
+      toast.error(`${t("common.error")}: ${e}`);
       setLocalStep("target");
     }
     setLoadingText("");
@@ -330,12 +334,12 @@ function App() {
   const cloudLoginSource = async () => {
     const creds = getSourceCredentials();
     if (!creds || !creds.username || !creds.password) {
-      toast.error("请选择或输入源账号");
+      toast.error(t("migrate.target.select"));
       return;
     }
 
     setLoading(true);
-    setLoadingText("正在登录并获取流程...");
+    setLoadingText(t("migrate.cloud.fetching"));
 
     try {
       const token: string = await invoke("login_account", {
@@ -349,7 +353,7 @@ function App() {
       setCloudFlows(flows);
       setCloudStep("list");
     } catch (e) {
-      toast.error(`登录失败: ${e}`);
+      toast.error(`${t("common.error")}: ${e}`);
     }
     setLoading(false);
     setLoadingText("");
@@ -357,7 +361,7 @@ function App() {
 
   const cloudNextToTarget = () => {
     if (selectedCloudIds.size === 0) {
-      toast.error("请先选择要迁移的流程");
+      toast.error(t("common.error"));
       return;
     }
     setCloudStep("target");
@@ -404,7 +408,7 @@ function App() {
         await appendOperationLog(user.id, `云端迁移 ${successCount}/${selectedFlows.length} 个流程到账号「${creds.name}」：${flowNames}`)
       }
     } catch (e) {
-      toast.error(`操作失败: ${e}`);
+      toast.error(`${t("common.error")}: ${e}`);
       setCloudStep("target");
     }
     setLoadingText("");
@@ -413,11 +417,11 @@ function App() {
   // 删除本地流程
   const deleteLocalFlows = async () => {
     if (selectedLocalIds.size === 0) return;
-    if (!confirm(`确定要删除 ${selectedLocalIds.size} 个流程吗？`)) return;
+    if (!confirm(t("accounts.delete.flows.confirm").replace("{count}", String(selectedLocalIds.size)))) return;
 
     const selectedFlows = Array.from(selectedLocalIds).map(i => localFlows[i]);
     setLoading(true);
-    setLoadingText(`正在删除...`);
+    setLoadingText(t("common.loading"));
 
     try {
       await invoke("delete_local_flows", { request: { flows: selectedFlows } });
@@ -429,8 +433,11 @@ function App() {
       if (user?.id) {
         await appendOperationLog(user.id, `删除了 ${selectedFlows.length} 个本地流程：${flowNames}`)
       }
+      setResults(results);
+      setCloudStep("result");
+      toast.success(t("common.success"));
     } catch (e) {
-      toast.error(`删除失败: ${e}`);
+      toast.error(`${t("common.error")}: ${e}`);
     }
     setLoading(false);
     setLoadingText("");
@@ -480,7 +487,7 @@ function App() {
           <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl" />
           <Loader2 className="h-10 w-10 animate-spin text-primary relative" />
         </div>
-        <p className="text-muted-foreground/80 font-medium">{loadingText}</p>
+        <p className="text-muted-foreground/80 font-medium">{loadingText || t("common.loading")}</p>
       </div>
     </div>
   );
@@ -537,7 +544,7 @@ function App() {
           )}>
             {selectedId === "manual" && <div className="w-2 h-2 rounded-full bg-primary" />}
           </div>
-          <span className="font-medium">手动输入</span>
+          <span className="font-medium">{t("migrate.target.manual")}</span>
         </div>
       </div>
 
@@ -573,10 +580,10 @@ function App() {
   const renderHome = () => (
     <div className="max-w-4xl mx-auto">
       <div className="mb-10">
-        <h1 className="text-3xl font-bold text-gradient">
-          欢迎使用影刀工具
+        <h1 className="text-3xl font-bold">
+          <ShinyText text={t("home.welcome")} speed={3} color="#4f46e5" shineColor="#93c5fd" />
         </h1>
-        <p className="text-muted-foreground/70 mt-2">选择一个功能开始</p>
+        <p className="text-muted-foreground/70 mt-2">{t("home.subtitle")}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -589,8 +596,8 @@ function App() {
             <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-250">
               <FolderSync className="h-7 w-7 text-primary" />
             </div>
-            <CardTitle className="text-lg">迁移流程</CardTitle>
-            <CardDescription>本地或云端流程迁移到其他账号</CardDescription>
+            <CardTitle className="text-lg">{t("home.migrate.title")}</CardTitle>
+            <CardDescription>{t("home.migrate.desc")}</CardDescription>
           </CardHeader>
         </Card>
 
@@ -603,9 +610,9 @@ function App() {
             <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-250">
               <Users className="h-7 w-7 text-primary" />
             </div>
-            <CardTitle className="text-lg">账号管理</CardTitle>
+            <CardTitle className="text-lg">{t("accounts.title")}</CardTitle>
             <CardDescription>
-              管理已保存的账号 ({accounts.length})
+              {t("home.accounts.desc")} ({accounts.length})
             </CardDescription>
           </CardHeader>
         </Card>
@@ -619,10 +626,10 @@ function App() {
       <div className="mb-10">
         <Button variant="ghost" onClick={() => setPage("home")} className="mb-4 -ml-3 text-muted-foreground/70">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          返回首页
+          {t("common.back")}
         </Button>
-        <h1 className="text-3xl font-bold text-gradient">迁移流程</h1>
-        <p className="text-muted-foreground/70 mt-1">选择迁移方式</p>
+        <h1 className="text-3xl font-bold text-gradient">{t("migrate.title")}</h1>
+        <p className="text-muted-foreground/70 mt-1">{t("migrate.subtitle")}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -634,8 +641,8 @@ function App() {
             <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-250">
               <HardDrive className="h-7 w-7 text-primary" />
             </div>
-            <CardTitle className="text-lg">本地迁移</CardTitle>
-            <CardDescription>将本地缓存的流程迁移到指定账号</CardDescription>
+            <CardTitle className="text-lg">{t("migrate.local")}</CardTitle>
+            <CardDescription>{t("migrate.local.desc")}</CardDescription>
           </CardHeader>
         </Card>
 
@@ -647,8 +654,8 @@ function App() {
             <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-250">
               <CloudDownload className="h-7 w-7 text-primary" />
             </div>
-            <CardTitle className="text-lg">云端迁移</CardTitle>
-            <CardDescription>从一个账号迁移流程到另一个账号</CardDescription>
+            <CardTitle className="text-lg">{t("migrate.cloud")}</CardTitle>
+            <CardDescription>{t("migrate.cloud.desc")}</CardDescription>
           </CardHeader>
         </Card>
       </div>
@@ -662,13 +669,13 @@ function App() {
         <div>
           <Button variant="ghost" onClick={() => setPage("home")} className="mb-4 -ml-3 text-muted-foreground/70">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            返回首页
+            {t("common.back")}
           </Button>
-          <h1 className="text-3xl font-bold text-gradient">账号管理</h1>
+          <h1 className="text-3xl font-bold text-gradient">{t("accounts.title")}</h1>
         </div>
         <Button onClick={() => { setEditingAccount(null); setShowAddForm(true); }}>
           <Plus className="h-4 w-4 mr-2" />
-          添加账号
+          {t("accounts.add")}
         </Button>
       </div>
 
@@ -678,9 +685,9 @@ function App() {
             <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-5">
               <Users className="h-8 w-8 text-muted-foreground/50" />
             </div>
-            <p className="text-muted-foreground/70 mb-5">暂无保存的账号</p>
+            <p className="text-muted-foreground/70 mb-5">{t("accounts.list")}</p>
             <Button onClick={() => { setEditingAccount(null); setShowAddForm(true); }}>
-              添加第一个账号
+              {t("accounts.add")}
             </Button>
           </CardContent>
         </Card>
@@ -713,7 +720,7 @@ function App() {
                       setShowAddForm(true);
                     }}
                   >
-                    编辑
+                    {t("common.edit")}
                   </Button>
                   <Button
                     variant="ghost"
@@ -721,7 +728,7 @@ function App() {
                     className="text-muted-foreground hover:text-destructive hover:bg-destructive/8"
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (confirm(`确定要删除账号 "${acc.name}" 吗？`)) {
+                      if (confirm(t("accounts.delete.confirm").replace("{name}", acc.name))) {
                         deleteAccount(acc.id);
                       }
                     }}
@@ -738,373 +745,371 @@ function App() {
   );
 
   // 本地迁移页
-  const renderLocalMigration = () => (
-    <div className="max-w-4xl mx-auto">
-      {(loading || localStep === "migrating") && renderLoading()}
+  const renderLocalMigration = () => {
+    const getLocalStepNumber = () => {
+      switch (localStep) {
+        case "list": return 1;
+        case "target": return 2;
+        case "result":
+        case "migrating": return 3;
+        default: return 1;
+      }
+    };
 
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <Button variant="ghost" onClick={() => setPage("home")} className="-ml-3 mb-2 text-muted-foreground/70">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            返回
-          </Button>
-          <h1 className="text-2xl font-bold text-gradient">本地迁移</h1>
+    return (
+      <div className="max-w-4xl mx-auto space-y-6">
+        {(loading || localStep === "migrating") && renderLoading()}
+
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <Button variant="ghost" onClick={() => setPage("home")} className="-ml-3 mb-2 text-muted-foreground/70">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              {t("common.back")}
+            </Button>
+            <h1 className="text-2xl font-bold text-gradient">{t("migrate.local")}</h1>
+          </div>
         </div>
-        <div className="flex gap-1.5">
-          {["选择流程", "目标账号", "完成"].map((step, idx) => (
-            <Badge
-              key={step}
-              variant={
-                (localStep === "list" && idx === 0) ||
-                  (localStep === "target" && idx === 1) ||
-                  ((localStep === "result" || localStep === "migrating") && idx === 2)
-                  ? "default"
-                  : "secondary"
-              }
-              className="text-xs"
-            >
-              {idx + 1}. {step}
-            </Badge>
-          ))}
-        </div>
-      </div>
 
-      <Card>
-        <CardContent className="p-6">
-          {localStep === "list" && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">选择要迁移的本地流程</h3>
-                <Button variant="outline" size="sm" onClick={refreshLocalFlows} disabled={loading}>
-                  <RefreshCw className={cn("h-4 w-4 mr-2", loading && "animate-spin")} />
-                  刷新
-                </Button>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
-                  <Input
-                    placeholder="搜索流程..."
-                    value={localSearch}
-                    onChange={e => { setLocalSearch(e.target.value); setLocalCurrentPage(1); }}
-                    className="pl-10"
-                  />
-                </div>
-                <span className="text-sm text-muted-foreground/60 whitespace-nowrap">
-                  已选 {selectedLocalIds.size} / {filteredLocalFlows.length}
-                </span>
-              </div>
-
-              <div className="rounded-2xl border border-border/30 overflow-hidden max-h-[300px] overflow-y-auto">
-                {paginatedLocalFlows.length === 0 ? (
-                  <div className="p-8 text-center text-muted-foreground/70">
-                    {localSearch ? "未找到匹配的流程" : "暂无本地流程"}
+        <Stepper
+          currentStep={getLocalStepNumber()}
+          steps={[t("migrate.step.list"), t("migrate.step.target"), t("migrate.step.result")]}
+          disableStepIndicators
+          showFooter={false}
+          stepCircleContainerClassName="border-0 shadow-none bg-transparent"
+          stepContainerClassName="px-0 pb-6"
+        >
+          {/* Step 1: Select Flows */}
+          <Step>
+            <Card>
+              <CardContent className="p-4 space-y-3">
+                <h3 className="text-lg font-semibold">{t("migrate.step.list")}</h3>
+                <div className="flex items-center gap-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+                    <Input
+                      placeholder={t("common.search")}
+                      value={localSearch}
+                      onChange={e => { setLocalSearch(e.target.value); setLocalCurrentPage(1); }}
+                      className="pl-10 h-9 text-sm"
+                    />
                   </div>
-                ) : (
-                  paginatedLocalFlows.map((flow) => {
-                    const realIdx = localFlows.indexOf(flow);
-                    return (
-                      <div
-                        key={realIdx}
-                        onClick={() => {
-                          const newSet = new Set(selectedLocalIds);
-                          if (newSet.has(realIdx)) newSet.delete(realIdx);
-                          else newSet.add(realIdx);
-                          setSelectedLocalIds(newSet);
-                        }}
-                        className={cn(
-                          "flex items-center gap-3 p-3.5 border-b border-border/20 last:border-0 cursor-pointer transition-all duration-200",
-                          selectedLocalIds.has(realIdx) ? "bg-primary/6" : "hover:bg-muted/40"
-                        )}
-                      >
-                        <div className={cn(
-                          "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors",
-                          selectedLocalIds.has(realIdx) ? "bg-primary border-primary" : "border-muted-foreground/30"
-                        )}>
-                          {selectedLocalIds.has(realIdx) && <Check className="h-3 w-3 text-primary-foreground" />}
+                  <span className="text-xs text-muted-foreground/60 whitespace-nowrap">
+                    {t("accounts.flow.selected").replace("{count}", String(selectedLocalIds.size))} / {filteredLocalFlows.length}
+                  </span>
+                </div>
+                <div className="rounded-xl border border-border/30 overflow-hidden max-h-[200px] overflow-y-auto bg-muted/5">
+                  {paginatedLocalFlows.length === 0 ? (
+                    <div className="p-8 text-center text-muted-foreground/70">
+                      {localSearch ? t("common.error") : t("common.loading")}
+                    </div>
+                  ) : (
+                    paginatedLocalFlows.map((flow) => {
+                      const realIdx = localFlows.indexOf(flow);
+                      return (
+                        <div
+                          key={realIdx}
+                          onClick={() => {
+                            const newSet = new Set(selectedLocalIds);
+                            if (newSet.has(realIdx)) newSet.delete(realIdx);
+                            else newSet.add(realIdx);
+                            setSelectedLocalIds(newSet);
+                          }}
+                          className={cn(
+                            "flex items-center gap-3 p-3.5 border-b border-border/20 last:border-0 cursor-pointer transition-all duration-200",
+                            selectedLocalIds.has(realIdx) ? "bg-primary/6" : "hover:bg-muted/40"
+                          )}
+                        >
+                          <div className={cn(
+                            "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors",
+                            selectedLocalIds.has(realIdx) ? "bg-primary border-primary" : "border-muted-foreground/30"
+                          )}>
+                            {selectedLocalIds.has(realIdx) && <Check className="h-3 w-3 text-primary-foreground" />}
+                          </div>
+                          <span className="flex-1 font-medium truncate">{flow.name}</span>
+                          <span className="text-sm text-muted-foreground/50">{flow.update_time}</span>
                         </div>
-                        <span className="flex-1 font-medium truncate">{flow.name}</span>
-                        <span className="text-sm text-muted-foreground/50">{flow.update_time}</span>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-
-              {renderPagination(localCurrentPage, localTotalPages, setLocalCurrentPage, localPageSize, setLocalPageSize)}
-
-              <div className="flex items-center justify-between pt-4 border-t border-border/20">
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setSelectedLocalIds(new Set(filteredLocalFlows.map(f => localFlows.indexOf(f))))}>
-                    全选
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => setSelectedLocalIds(new Set())}>
-                    取消全选
-                  </Button>
-                  {isAdmin && (
-                    <Button variant="destructive" size="sm" onClick={deleteLocalFlows} disabled={selectedLocalIds.size === 0}>
-                      <Trash2 className="h-4 w-4 mr-1" />
-                      删除
-                    </Button>
+                      );
+                    })
                   )}
                 </div>
-                <Button onClick={localNextToTarget} disabled={selectedLocalIds.size === 0}>
-                  下一步
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {localStep === "target" && (
-            <div className="space-y-6">
-              {renderAccountSelector(targetAccountId, setTargetAccountId, targetManualUser, setTargetManualUser, targetManualPwd, setTargetManualPwd, "选择目标账号")}
-
-              <div className="p-4 rounded-2xl bg-primary/6 text-center">
-                <span className="text-primary font-medium">已选择 {selectedLocalIds.size} 个流程</span>
-              </div>
-
-              <div className="flex justify-between pt-4 border-t border-border/20">
-                <Button variant="outline" onClick={() => setLocalStep("list")}>
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  上一步
-                </Button>
-                <Button
-                  onClick={localDoMigrate}
-                  disabled={!targetAccountId || (targetAccountId === "manual" && (!targetManualUser || !targetManualPwd))}
-                >
-                  开始迁移
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {localStep === "result" && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-center">迁移完成</h3>
-
-              <div className="max-h-[300px] overflow-y-auto space-y-2">
-                {results.map((r, idx) => (
-                  <div
-                    key={idx}
-                    className={cn(
-                      "flex items-center gap-3 p-3.5 rounded-xl",
-                      r.success ? "bg-emerald-500/8" : "bg-red-500/8"
+                {renderPagination(localCurrentPage, localTotalPages, setLocalCurrentPage, localPageSize, setLocalPageSize)}
+                <div className="flex items-center justify-between pt-4 border-t border-border/20">
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => setSelectedLocalIds(new Set(filteredLocalFlows.map(f => localFlows.indexOf(f))))}>
+                      {t("common.save")}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => setSelectedLocalIds(new Set())}>
+                      {t("common.cancel")}
+                    </Button>
+                    {isAdmin && (
+                      <Button variant="destructive" size="sm" onClick={deleteLocalFlows} disabled={selectedLocalIds.size === 0}>
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        {t("common.delete")}
+                      </Button>
                     )}
-                  >
-                    {r.success ? (
-                      <Check className="h-5 w-5 text-emerald-500" />
-                    ) : (
-                      <X className="h-5 w-5 text-red-500" />
-                    )}
-                    <span className="font-medium">{r.name}</span>
                   </div>
-                ))}
-              </div>
+                  <Button onClick={localNextToTarget} disabled={selectedLocalIds.size === 0}>
+                    {t("common.confirm")}
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </Step>
 
-              <div className="text-center text-lg font-semibold text-emerald-600 dark:text-emerald-400">
-                成功 {results.filter(r => r.success).length} / {results.length} 个
-              </div>
+          {/* Step 2: Select Target */}
+          <Step>
+            <Card>
+              <CardContent className="p-4 space-y-4">
+                {renderAccountSelector(targetAccountId, setTargetAccountId, targetManualUser, setTargetManualUser, targetManualPwd, setTargetManualPwd, t("migrate.target.select"))}
+                <div className="p-3 rounded-xl bg-primary/6 text-center">
+                  <span className="text-primary text-sm font-medium">{t("accounts.flow.selected").replace("{count}", String(selectedLocalIds.size))}</span>
+                </div>
+                <div className="flex justify-between pt-3 border-t border-border/20">
+                  <Button variant="outline" size="sm" onClick={() => setLocalStep("list")}>
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    {t("common.back")}
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={localDoMigrate}
+                    disabled={!targetAccountId || (targetAccountId === "manual" && (!targetManualUser || !targetManualPwd))}
+                  >
+                    {t("migrate.step.migrating")}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </Step>
 
-              <div className="flex justify-center pt-4">
-                <Button onClick={() => setPage("home")}>返回首页</Button>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
+          {/* Step 3: Result */}
+          <Step>
+            <Card>
+              <CardContent className="p-6 space-y-4">
+                <h3 className="text-lg font-semibold text-center">{t("migrate.step.result")}</h3>
+                <div className="max-h-[300px] overflow-y-auto space-y-2">
+                  {results.map((r, idx) => (
+                    <div
+                      key={idx}
+                      className={cn(
+                        "flex items-center gap-3 p-3.5 rounded-xl",
+                        r.success ? "bg-emerald-500/8" : "bg-red-500/8"
+                      )}
+                    >
+                      {r.success ? (
+                        <Check className="h-5 w-5 text-emerald-500" />
+                      ) : (
+                        <X className="h-5 w-5 text-red-500" />
+                      )}
+                      <span className="font-medium">{r.name}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="text-center text-lg font-semibold text-emerald-600 dark:text-emerald-400">
+                  {t("common.success")} {results.filter(r => r.success).length} / {results.length} 个
+                </div>
+                <div className="flex justify-center pt-4">
+                  <Button onClick={() => setPage("home")}>{t("common.home")}</Button>
+                </div>
+              </CardContent>
+            </Card>
+          </Step>
+        </Stepper>
+      </div>
+    );
+  };
 
   // 云端迁移页
-  const renderCloudMigration = () => (
-    <div className="max-w-4xl mx-auto">
-      {(loading || cloudStep === "migrating") && renderLoading()}
+  const renderCloudMigration = () => {
+    const getCloudStepNumber = () => {
+      switch (cloudStep) {
+        case "source": return 1;
+        case "list": return 2;
+        case "target": return 3;
+        case "result":
+        case "migrating": return 4;
+        default: return 1;
+      }
+    };
 
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <Button variant="ghost" onClick={() => setPage("home")} className="-ml-3 mb-2 text-muted-foreground/70">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            返回
-          </Button>
-          <h1 className="text-2xl font-bold text-gradient">云端迁移</h1>
+    return (
+      <div className="max-w-4xl mx-auto space-y-6">
+        {(loading || cloudStep === "migrating") && renderLoading()}
+
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <Button variant="ghost" onClick={() => setPage("home")} className="-ml-3 mb-2 text-muted-foreground/70">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              {t("common.back")}
+            </Button>
+            <h1 className="text-2xl font-bold text-gradient">{t("migrate.cloud")}</h1>
+          </div>
         </div>
-        <div className="flex gap-1.5">
-          {["源账号", "选择流程", "目标账号", "完成"].map((step, idx) => (
-            <Badge
-              key={step}
-              variant={
-                (cloudStep === "source" && idx === 0) ||
-                  (cloudStep === "list" && idx === 1) ||
-                  (cloudStep === "target" && idx === 2) ||
-                  ((cloudStep === "result" || cloudStep === "migrating") && idx === 3)
-                  ? "default"
-                  : "secondary"
-              }
-              className="text-xs"
-            >
-              {idx + 1}. {step}
-            </Badge>
-          ))}
-        </div>
-      </div>
 
-      <Card>
-        <CardContent className="p-6">
-          {cloudStep === "source" && (
-            <div className="space-y-6">
-              {renderAccountSelector(sourceAccountId, setSourceAccountId, sourceManualUser, setSourceManualUser, sourceManualPwd, setSourceManualPwd, "选择源账号（从此账号获取流程）")}
-
-              <div className="flex justify-end pt-4 border-t border-border/20">
-                <Button
-                  onClick={cloudLoginSource}
-                  disabled={!sourceAccountId || (sourceAccountId === "manual" && (!sourceManualUser || !sourceManualPwd)) || loading}
-                >
-                  登录并获取流程
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {cloudStep === "list" && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">选择要迁移的流程</h3>
-
-              <div className="flex items-center gap-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
-                  <Input
-                    placeholder="搜索流程..."
-                    value={cloudSearch}
-                    onChange={e => { setCloudSearch(e.target.value); setCloudCurrentPage(1); }}
-                    className="pl-10"
-                  />
-                </div>
-                <span className="text-sm text-muted-foreground/60 whitespace-nowrap">
-                  已选 {selectedCloudIds.size} / {filteredCloudFlows.length}
-                </span>
-              </div>
-
-              <div className="rounded-2xl border border-border/30 overflow-hidden max-h-[300px] overflow-y-auto">
-                {paginatedCloudFlows.length === 0 ? (
-                  <div className="p-8 text-center text-muted-foreground/70">
-                    {cloudSearch ? "未找到匹配的流程" : "暂无云端流程"}
-                  </div>
-                ) : (
-                  paginatedCloudFlows.map((flow) => {
-                    const realIdx = cloudFlows.indexOf(flow);
-                    return (
-                      <div
-                        key={realIdx}
-                        onClick={() => {
-                          const newSet = new Set(selectedCloudIds);
-                          if (newSet.has(realIdx)) newSet.delete(realIdx);
-                          else newSet.add(realIdx);
-                          setSelectedCloudIds(newSet);
-                        }}
-                        className={cn(
-                          "flex items-center gap-3 p-3.5 border-b border-border/20 last:border-0 cursor-pointer transition-all duration-200",
-                          selectedCloudIds.has(realIdx) ? "bg-primary/6" : "hover:bg-muted/40"
-                        )}
-                      >
-                        <div className={cn(
-                          "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors",
-                          selectedCloudIds.has(realIdx) ? "bg-primary border-primary" : "border-muted-foreground/30"
-                        )}>
-                          {selectedCloudIds.has(realIdx) && <Check className="h-3 w-3 text-primary-foreground" />}
-                        </div>
-                        <span className="flex-1 font-medium truncate">{flow.appName}</span>
-                        <span className="text-sm text-muted-foreground/50">{flow.updateTime?.substring(0, 19) || ""}</span>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-
-              {renderPagination(cloudCurrentPage, cloudTotalPages, setCloudCurrentPage, cloudPageSize, setCloudPageSize)}
-
-              <div className="flex items-center justify-between pt-4 border-t border-border/20">
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setSelectedCloudIds(new Set(filteredCloudFlows.map(f => cloudFlows.indexOf(f))))}>
-                    全选
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => setSelectedCloudIds(new Set())}>
-                    取消全选
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => setCloudStep("source")}>
-                    <ArrowLeft className="h-4 w-4 mr-1" />
-                    上一步
-                  </Button>
-                </div>
-                <Button onClick={cloudNextToTarget} disabled={selectedCloudIds.size === 0}>
-                  下一步
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {cloudStep === "target" && (
-            <div className="space-y-6">
-              {renderAccountSelector(targetAccountId, setTargetAccountId, targetManualUser, setTargetManualUser, targetManualPwd, setTargetManualPwd, "选择目标账号")}
-
-              <div className="p-4 rounded-2xl bg-primary/6 text-center">
-                <span className="text-primary font-medium">已选择 {selectedCloudIds.size} 个流程</span>
-              </div>
-
-              <div className="flex justify-between pt-4 border-t border-border/20">
-                <Button variant="outline" onClick={() => setCloudStep("list")}>
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  上一步
-                </Button>
-                <Button
-                  onClick={cloudDoMigrate}
-                  disabled={!targetAccountId || (targetAccountId === "manual" && (!targetManualUser || !targetManualPwd))}
-                >
-                  开始迁移
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {cloudStep === "result" && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-center">迁移完成</h3>
-
-              <div className="max-h-[300px] overflow-y-auto space-y-2">
-                {results.map((r, idx) => (
-                  <div
-                    key={idx}
-                    className={cn(
-                      "flex items-center gap-3 p-3.5 rounded-xl",
-                      r.success ? "bg-emerald-500/8" : "bg-red-500/8"
-                    )}
+        <Stepper
+          currentStep={getCloudStepNumber()}
+          steps={[t("migrate.step.source"), t("migrate.step.list"), t("migrate.step.target"), t("migrate.step.result")]}
+          disableStepIndicators
+          showFooter={false}
+          stepCircleContainerClassName="border-0 shadow-none bg-transparent"
+          stepContainerClassName="px-0 pb-6"
+        >
+          {/* Step 1: Select Source */}
+          <Step>
+            <Card>
+              <CardContent className="p-4 space-y-4">
+                {renderAccountSelector(sourceAccountId, setSourceAccountId, sourceManualUser, setSourceManualUser, sourceManualPwd, setSourceManualPwd, t("migrate.source.select"))}
+                <div className="flex justify-end pt-4 border-t border-border/20">
+                  <Button
+                    onClick={cloudLoginSource}
+                    disabled={!sourceAccountId || (sourceAccountId === "manual" && (!sourceManualUser || !sourceManualPwd)) || loading}
                   >
-                    {r.success ? (
-                      <Check className="h-5 w-5 text-emerald-500" />
-                    ) : (
-                      <X className="h-5 w-5 text-red-500" />
-                    )}
-                    <span className="font-medium">{r.name}</span>
+                    {t("migrate.cloud.fetch_button")}
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </Step>
+
+          {/* Step 2: Select Flows */}
+          <Step>
+            <Card>
+              <CardContent className="p-4 space-y-3">
+                <h3 className="text-lg font-semibold">{t("migrate.step.list")}</h3>
+                <div className="flex items-center gap-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+                    <Input
+                      placeholder={t("common.search")}
+                      value={cloudSearch}
+                      onChange={e => { setCloudSearch(e.target.value); setCloudCurrentPage(1); }}
+                      className="pl-10 h-9 text-sm"
+                    />
                   </div>
-                ))}
-              </div>
+                  <span className="text-xs text-muted-foreground/60 whitespace-nowrap">
+                    {t("accounts.flow.selected").replace("{count}", String(selectedCloudIds.size))} / {filteredCloudFlows.length}
+                  </span>
+                </div>
+                <div className="rounded-xl border border-border/30 overflow-hidden max-h-[200px] overflow-y-auto bg-muted/5">
+                  {paginatedCloudFlows.length === 0 ? (
+                    <div className="p-8 text-center text-muted-foreground/70">
+                      {cloudSearch ? t("common.error") : t("common.loading")}
+                    </div>
+                  ) : (
+                    paginatedCloudFlows.map((flow) => {
+                      const realIdx = cloudFlows.indexOf(flow);
+                      return (
+                        <div
+                          key={realIdx}
+                          onClick={() => {
+                            const newSet = new Set(selectedCloudIds);
+                            if (newSet.has(realIdx)) newSet.delete(realIdx);
+                            else newSet.add(realIdx);
+                            setSelectedCloudIds(newSet);
+                          }}
+                          className={cn(
+                            "flex items-center gap-3 p-3.5 border-b border-border/20 last:border-0 cursor-pointer transition-all duration-200",
+                            selectedCloudIds.has(realIdx) ? "bg-primary/6" : "hover:bg-muted/40"
+                          )}
+                        >
+                          <div className={cn(
+                            "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors",
+                            selectedCloudIds.has(realIdx) ? "bg-primary border-primary" : "border-muted-foreground/30"
+                          )}>
+                            {selectedCloudIds.has(realIdx) && <Check className="h-3 w-3 text-primary-foreground" />}
+                          </div>
+                          <span className="flex-1 font-medium truncate">{flow.appName}</span>
+                          <span className="text-sm text-muted-foreground/50">{flow.updateTime?.substring(0, 19) || ""}</span>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+                {renderPagination(cloudCurrentPage, cloudTotalPages, setCloudCurrentPage, cloudPageSize, setCloudPageSize)}
+                <div className="flex items-center justify-between pt-4 border-t border-border/20">
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => setSelectedCloudIds(new Set(filteredCloudFlows.map(f => cloudFlows.indexOf(f))))}>
+                      {t("common.save")}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => setSelectedCloudIds(new Set())}>
+                      {t("common.cancel")}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => setCloudStep("source")}>
+                      <ArrowLeft className="h-4 w-4 mr-1" />
+                      {t("common.back")}
+                    </Button>
+                  </div>
+                  <Button onClick={cloudNextToTarget} disabled={selectedCloudIds.size === 0}>
+                    {t("common.confirm")}
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </Step>
 
-              <div className="text-center text-lg font-semibold text-emerald-600 dark:text-emerald-400">
-                成功 {results.filter(r => r.success).length} / {results.length} 个
-              </div>
+          {/* Step 3: Select Target */}
+          <Step>
+            <Card>
+              <CardContent className="p-4 space-y-4">
+                {renderAccountSelector(targetAccountId, setTargetAccountId, targetManualUser, setTargetManualUser, targetManualPwd, setTargetManualPwd, t("migrate.target.select"))}
+                <div className="p-3 rounded-xl bg-primary/6 text-center">
+                  <span className="text-primary text-sm font-medium">{t("accounts.flow.selected").replace("{count}", String(selectedCloudIds.size))}</span>
+                </div>
+                <div className="flex justify-between pt-3 border-t border-border/20">
+                  <Button variant="outline" size="sm" onClick={() => setCloudStep("list")}>
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    {t("common.back")}
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={cloudDoMigrate}
+                    disabled={!targetAccountId || (targetAccountId === "manual" && (!targetManualUser || !targetManualPwd))}
+                  >
+                    {t("migrate.step.migrating")}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </Step>
 
-              <div className="flex justify-center pt-4">
-                <Button onClick={() => setPage("home")}>返回首页</Button>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
+          {/* Step 4: Result */}
+          <Step>
+            <Card>
+              <CardContent className="p-4 space-y-3">
+                <h3 className="text-lg font-semibold text-center">{t("migrate.step.result")}</h3>
+                <div className="max-h-[220px] overflow-y-auto space-y-1.5">
+                  {results.map((r, idx) => (
+                    <div
+                      key={idx}
+                      className={cn(
+                        "flex items-center gap-3 p-2.5 rounded-lg",
+                        r.success ? "bg-emerald-500/8" : "bg-red-500/8"
+                      )}
+                    >
+                      {r.success ? (
+                        <Check className="h-4 w-4 text-emerald-500" />
+                      ) : (
+                        <X className="h-4 w-4 text-red-500" />
+                      )}
+                      <span className="font-medium text-sm">{r.name}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="text-center text-md font-semibold text-emerald-600 dark:text-emerald-400">
+                  {t("common.success")} {results.filter(r => r.success).length} / {results.length} 个
+                </div>
+                <div className="flex justify-center pt-2">
+                  <Button size="sm" onClick={() => setPage("home")}>{t("common.home")}</Button>
+                </div>
+              </CardContent>
+            </Card>
+          </Step>
+        </Stepper>
+      </div>
+    );
+  };
 
 
   return (

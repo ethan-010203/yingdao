@@ -229,11 +229,11 @@ export function SettingsPage() {
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <h1 className="text-3xl font-bold tracking-tight">影刀账号管理工具</h1>
+                                    <h1 className="text-3xl font-bold tracking-tight">{t("settings.app.title")}</h1>
                                     <div className="flex items-center justify-center gap-2 text-muted-foreground">
                                         <span className="text-sm">v1.1.4</span>
                                         <span>•</span>
-                                        <span className="text-sm">Professional Account Management</span>
+                                        <span className="text-sm">{t("settings.app.subtitle")}</span>
                                     </div>
                                 </div>
                             </div>

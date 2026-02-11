@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { AlertTriangle, Loader2, Eye, EyeOff } from "lucide-react"
+import { useTranslation } from "@/lib/i18n"
 
 interface Account {
     id: string
@@ -36,6 +37,7 @@ export function ReLoginDialog({
     onSuccess,
     onUpdatePassword,
 }: ReLoginDialogProps) {
+    const { t } = useTranslation()
     const [password, setPassword] = useState("")
     const [showPassword, setShowPassword] = useState(false)
     const [loading, setLoading] = useState(false)
@@ -82,16 +84,16 @@ export function ReLoginDialog({
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 text-amber-600">
                         <AlertTriangle className="h-5 w-5" />
-                        登录已过期
+                        {t("accounts.expired.title")}
                     </DialogTitle>
                     <DialogDescription>
-                        账号 "{account?.name}" 的登录状态已过期，请重新输入密码
+                        {t("accounts.expired.desc").replace("{name}", account?.name || "")}
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-4 py-4">
                     <div className="space-y-2">
-                        <label className="text-sm font-medium">用户名</label>
+                        <label className="text-sm font-medium">{t("accounts.username")}</label>
                         <Input
                             value={account?.username || ""}
                             disabled
@@ -100,11 +102,11 @@ export function ReLoginDialog({
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium">密码</label>
+                        <label className="text-sm font-medium">{t("accounts.password")}</label>
                         <div className="relative">
                             <Input
                                 type={showPassword ? "text" : "password"}
-                                placeholder="请输入密码"
+                                placeholder={t("accounts.password")}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 onKeyDown={(e) => e.key === "Enter" && handleLogin()}
@@ -129,11 +131,11 @@ export function ReLoginDialog({
 
                 <DialogFooter>
                     <Button variant="outline" onClick={() => onOpenChange(false)}>
-                        取消
+                        {t("common.cancel")}
                     </Button>
                     <Button onClick={handleLogin} disabled={loading || !password.trim()}>
                         {loading && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-                        重新登录
+                        {t("accounts.relogin")}
                     </Button>
                 </DialogFooter>
             </DialogContent>

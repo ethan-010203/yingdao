@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { UserPlus, Eye, EyeOff, Loader2 } from "lucide-react"
+import { useTranslation } from "@/lib/i18n"
 
 interface AddAccountDialogProps {
     open: boolean
@@ -27,6 +28,7 @@ export function AddAccountDialog({
     onSave,
     editAccount,
 }: AddAccountDialogProps) {
+    const { t } = useTranslation()
     const [name, setName] = useState("")
     const [username, setUsername] = useState("")
     const [password, setPassword] = useState("")
@@ -52,9 +54,9 @@ export function AddAccountDialog({
 
     const validate = () => {
         const newErrors: typeof errors = {}
-        if (!name.trim()) newErrors.name = "请输入账号名称"
-        if (!username.trim()) newErrors.username = "请输入用户名"
-        if (!password.trim()) newErrors.password = "请输入密码"
+        if (!name.trim()) newErrors.name = t("accounts.name")
+        if (!username.trim()) newErrors.username = t("accounts.username")
+        if (!password.trim()) newErrors.password = t("accounts.password")
         setErrors(newErrors)
         return Object.keys(newErrors).length === 0
     }
@@ -78,7 +80,7 @@ export function AddAccountDialog({
             onOpenChange(false)
         } catch (err) {
             // 验证失败，显示错误信息
-            setErrors({ general: `账号验证失败: ${String(err)}` })
+            setErrors({ general: `${t("accounts.verify_failed")}: ${String(err)}` })
         } finally {
             setVerifying(false)
         }
@@ -92,7 +94,7 @@ export function AddAccountDialog({
                     <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center rounded-lg">
                         <div className="flex flex-col items-center gap-2">
                             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                            <span className="text-sm text-muted-foreground">正在验证账号...</span>
+                            <span className="text-sm text-muted-foreground">{t("accounts.verifying")}</span>
                         </div>
                     </div>
                 )}
@@ -100,10 +102,10 @@ export function AddAccountDialog({
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <UserPlus className="h-5 w-5" />
-                        {editAccount ? "编辑账号" : "添加账号"}
+                        {editAccount ? t("common.edit") : t("accounts.add")}
                     </DialogTitle>
                     <DialogDescription>
-                        {editAccount ? "修改账号信息" : "添加一个新的影刀账号（将自动验证账号密码）"}
+                        {editAccount ? t("accounts.edit.desc") : t("accounts.add.desc")}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -116,9 +118,9 @@ export function AddAccountDialog({
                     )}
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium">账号名称</label>
+                        <label className="text-sm font-medium">{t("accounts.flow.name")}</label>
                         <Input
-                            placeholder="例如：工作账号"
+                            placeholder={t("accounts.flow.name")}
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             className={errors.name ? "border-destructive" : ""}
@@ -130,9 +132,9 @@ export function AddAccountDialog({
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium">用户名</label>
+                        <label className="text-sm font-medium">{t("accounts.username")}</label>
                         <Input
-                            placeholder="手机号/邮箱"
+                            placeholder={t("accounts.username")}
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
                             className={errors.username ? "border-destructive" : ""}
@@ -144,11 +146,11 @@ export function AddAccountDialog({
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium">密码</label>
+                        <label className="text-sm font-medium">{t("accounts.password")}</label>
                         <div className="relative">
                             <Input
                                 type={showPassword ? "text" : "password"}
-                                placeholder="账号密码"
+                                placeholder={t("accounts.password")}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 className={errors.password ? "border-destructive pr-10" : "pr-10"}
@@ -171,16 +173,16 @@ export function AddAccountDialog({
 
                 <DialogFooter>
                     <Button variant="outline" onClick={() => onOpenChange(false)} disabled={verifying}>
-                        取消
+                        {t("common.cancel")}
                     </Button>
                     <Button onClick={handleSave} disabled={verifying}>
                         {verifying ? (
                             <>
                                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                验证中...
+                                {t("accounts.verifying")}
                             </>
                         ) : (
-                            editAccount ? "保存" : "添加"
+                            editAccount ? t("common.save") : t("common.add")
                         )}
                     </Button>
                 </DialogFooter>

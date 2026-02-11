@@ -5,8 +5,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Toaster, toast } from '@/components/ui/toaster'
 import { Loader2, User, Lock, LogIn, Eye, EyeOff } from 'lucide-react'
+import { useTranslation } from '@/lib/i18n'
 
 export function LoginPage() {
+    const { t } = useTranslation()
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
     const [showPassword, setShowPassword] = useState(false)
@@ -17,7 +19,7 @@ export function LoginPage() {
         e.preventDefault()
 
         if (!username.trim() || !password.trim()) {
-            toast.error('请输入用户名和密码')
+            toast.error(t('login.error'))
             return
         }
 
@@ -25,10 +27,10 @@ export function LoginPage() {
 
         try {
             await signIn(username, password)
-            toast.success('登录成功！')
+            toast.success(t('login.success'))
         } catch (error: any) {
             console.error('登录失败:', error)
-            toast.error(error.message || '登录失败，请检查用户名和密码')
+            toast.error(error.message || t('login.error'))
         } finally {
             setLoading(false)
         }
@@ -50,10 +52,10 @@ export function LoginPage() {
                             <LogIn className="h-8 w-8" />
                         </div>
                         <CardTitle className="text-2xl font-bold">
-                            影刀工具
+                            {t('login.title')}
                         </CardTitle>
                         <CardDescription className="text-muted-foreground/70">
-                            请登录以继续使用
+                            {t('login.subtitle')}
                         </CardDescription>
                     </CardHeader>
 
@@ -62,14 +64,14 @@ export function LoginPage() {
                             {/* 用户名输入 */}
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-foreground/80" htmlFor="username">
-                                    用户名
+                                    {t('login.username')}
                                 </label>
                                 <div className="relative">
                                     <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
                                     <Input
                                         id="username"
                                         type="text"
-                                        placeholder="请输入用户名"
+                                        placeholder={t('login.username')}
                                         value={username}
                                         onChange={(e) => setUsername(e.target.value)}
                                         className="pl-10 h-11"
@@ -82,14 +84,14 @@ export function LoginPage() {
                             {/* 密码输入 */}
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-foreground/80" htmlFor="password">
-                                    密码
+                                    {t('login.password')}
                                 </label>
                                 <div className="relative">
                                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
                                     <Input
                                         id="password"
                                         type={showPassword ? "text" : "password"}
-                                        placeholder="请输入密码"
+                                        placeholder={t('login.password')}
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         className="pl-10 pr-10 h-11"
@@ -116,12 +118,12 @@ export function LoginPage() {
                                 {loading ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        登录中...
+                                        {t('login.logging_in')}
                                     </>
                                 ) : (
                                     <>
                                         <LogIn className="mr-2 h-4 w-4" />
-                                        登录
+                                        {t('login.button')}
                                     </>
                                 )}
                             </Button>
@@ -129,7 +131,7 @@ export function LoginPage() {
 
                         {/* 版权信息 */}
                         <p className="text-center text-xs text-muted-foreground/50 mt-8">
-                            © 2026 影刀工具 · 安全登录
+                            {t('login.footer')}
                         </p>
                     </CardContent>
                 </Card>
