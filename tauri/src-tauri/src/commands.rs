@@ -2,6 +2,7 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
+use tauri::Manager;
 
 use crate::api::auth;
 use crate::flow::{local, cloud, migrate};
@@ -44,29 +45,21 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            accounts: vec![
-                AccountConfig {
-                    name: "账号1".to_string(),
-                    username: "".to_string(),
-                    password: "".to_string(),
-                },
-                AccountConfig {
-                    name: "账号2".to_string(),
-                    username: "".to_string(),
-                    password: "".to_string(),
-                },
-            ],
+            accounts: vec![],
             settings: SettingsConfig::default(),
         }
     }
 }
 
-fn get_config_path() -> PathBuf {
-    let exe_dir = std::env::current_exe()
-        .ok()
-        .and_then(|p| p.parent().map(|p| p.to_path_buf()))
-        .unwrap_or_else(|| PathBuf::from("."));
-    exe_dir.join("migrate_config.json")
+fn get_config_path(app_handle: &tauri::AppHandle) -> PathBuf {
+    app_handle
+        .path()
+        .app_config_dir()
+        .map(|p| p.join("migrate_config.json"))
+        .unwrap_or_else(|e| {
+            eprintln!("无法获取应用配置目录: {}", e);
+            PathBuf::from("migrate_config.json")
+        })
 }
 
 /// 登录账号
@@ -204,8 +197,15 @@ pub fn delete_local_flows(request: DeleteRequest) -> Vec<MigrateResult> {
 
 /// 保存配置
 #[tauri::command]
-pub fn save_config(config: Config) -> Result<(), String> {
-    let path = get_config_path();
+pub fn save_config(app_handle: tauri::AppHandle, config: Config) -> Result<(), String> {
+    let path = get_config_path(&app_handle);
+    
+    // 确保父目录存在
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)
+            .map_err(|e| format!("创建配置目录失败: {}", e))?;
+    }
+
     let content = serde_json::to_string_pretty(&config)
         .map_err(|e| format!("序列化配置失败: {}", e))?;
     fs::write(&path, content)
@@ -215,8 +215,8 @@ pub fn save_config(config: Config) -> Result<(), String> {
 
 /// 加载配置
 #[tauri::command]
-pub fn load_config() -> Config {
-    let path = get_config_path();
+pub fn load_config(app_handle: tauri::AppHandle) -> Config {
+    let path = get_config_path(&app_handle);
     if path.exists() {
         if let Ok(content) = fs::read_to_string(&path) {
             if let Ok(config) = serde_json::from_str(&content) {

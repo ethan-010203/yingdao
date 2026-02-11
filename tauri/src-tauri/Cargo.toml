@@ -1,6 +1,6 @@
 [package]
 name = "yingdao-manager"
-version = "1.1.4"
+version = "1.1.5"
 description = "影刀流程迁移工具"
 authors = ["you"]
 edition = "2021"
