@@ -1,5 +1,5 @@
 import * as React from "react"
-import { User, Globe, Heart, Moon, Sun, Monitor } from "lucide-react"
+import { User, Globe, Heart, Moon, Sun, Monitor, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
@@ -7,8 +7,22 @@ import { cn } from "@/lib/utils"
 import avatar from "@/assets/avatar.png"
 import { useConfig } from "@/contexts/ConfigContext"
 import { useTranslation } from "@/lib/i18n"
-import { check } from "@tauri-apps/plugin-updater"
+import { invoke } from "@tauri-apps/api/core"
+import { listen } from "@tauri-apps/api/event"
 import { toast } from "@/components/ui/toaster"
+
+interface UpdateInfo {
+    hasUpdate: boolean
+    currentVersion: string
+    latestVersion: string
+    downloadUrl: string | null
+}
+
+interface DownloadProgressPayload {
+    downloaded: number
+    total: number
+    percentage: number
+}
 
 export function SettingsPage() {
     const { settings, updateSettings } = useConfig()
@@ -17,23 +31,26 @@ export function SettingsPage() {
     // Local state for UI
     const [activeTab, setActiveTab] = React.useState("general")
     const [isChecking, setIsChecking] = React.useState(false)
+    const [isDownloading, setIsDownloading] = React.useState(false)
+    const [downloadProgress, setDownloadProgress] = React.useState(0)
 
     const handleCheckUpdate = async () => {
         setIsChecking(true)
         try {
-            const update = await check()
-            if (update?.available) {
-                // Assuming we want to ask user to update
-                // For now just show a toast or simplified flow
-                toast.success(`Found version ${update.version}`, {
-                    action: {
-                        label: "Update",
-                        onClick: async () => {
-                            await update.downloadAndInstall()
-                            // Restart app logic if needed
-                        }
+            const info = await invoke<UpdateInfo>("check_for_update")
+            if (info.hasUpdate) {
+                toast.success(
+                    t("settings.check_update.found").replace("{version}", `v${info.latestVersion}`),
+                    {
+                        duration: 10000,
+                        action: info.downloadUrl
+                            ? {
+                                label: t("settings.check_update.download"),
+                                onClick: () => handleDownloadUpdate(info.downloadUrl!),
+                            }
+                            : undefined,
                     }
-                })
+                )
             } else {
                 toast.success(t("settings.check_update.latest"))
             }
@@ -42,6 +59,39 @@ export function SettingsPage() {
             toast.error(t("common.error") + ": " + String(error))
         } finally {
             setIsChecking(false)
+        }
+    }
+
+    const handleDownloadUpdate = async (downloadUrl: string) => {
+        setIsDownloading(true)
+        setDownloadProgress(0)
+        toast.info(t("settings.check_update.downloading"))
+
+        // Listen for progress events
+        const unlisten = await listen<DownloadProgressPayload>("download-progress", (event) => {
+            setDownloadProgress(event.payload.percentage)
+        })
+
+        try {
+            const filePath = await invoke<string>("download_update", { downloadUrl })
+            setDownloadProgress(100)
+            unlisten()
+
+            // Show brief success message, then launch installer and exit
+            toast.success(t("settings.check_update.installing"))
+
+            // Short delay to let user see the 100% state
+            await new Promise(resolve => setTimeout(resolve, 800))
+
+            // Open installer and exit app
+            await invoke("open_file_and_exit", { filePath })
+        } catch (error) {
+            unlisten()
+            console.error(error)
+            toast.error(t("settings.check_update.download_failed") + ": " + String(error))
+            setDownloadProgress(0)
+        } finally {
+            setIsDownloading(false)
         }
     }
 
@@ -73,16 +123,9 @@ export function SettingsPage() {
                         {t("settings.about")}
                     </button>
                 </div>
-
-                {/* No manual save button needed as we verify on change, but maybe good to confirm? 
-                    Actually, with auto-save on change pattern, we don't strictly need a save button.
-                    But typically users like one. 
-                    Let's remove it for smoother experience, or keep it as a "Force Save" or just visual.
-                    Re-reading plan: "Implement save_config when settings are changed/saved." -> auto-save is better UI.
-                */}
             </div>
 
-            {/* Content Content */}
+            {/* Content */}
             <div className="flex-1 overflow-auto p-8">
                 <div className="max-w-4xl mx-auto space-y-8">
 
@@ -227,14 +270,43 @@ export function SettingsPage() {
                                 variant="default"
                                 size="default"
                                 onClick={handleCheckUpdate}
-                                disabled={isChecking}
+                                disabled={isChecking || isDownloading}
                             >
-                                <span className="relative flex h-2 w-2">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-500"></span>
-                                </span>
-                                {isChecking ? t("settings.check_update.checking") : t("settings.check_update")}
+                                {isDownloading ? (
+                                    <Download className="h-4 w-4 animate-bounce" />
+                                ) : (
+                                    <span className="relative flex h-2 w-2">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-500"></span>
+                                    </span>
+                                )}
+                                {isDownloading
+                                    ? `${t("settings.check_update.downloading")} ${downloadProgress}%`
+                                    : isChecking
+                                        ? t("settings.check_update.checking")
+                                        : t("settings.check_update")}
                             </Button>
+
+                            {/* Download Progress Bar */}
+                            {isDownloading && (
+                                <div className="w-full max-w-md mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                    <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+                                        <span>{t("settings.check_update.downloading")}</span>
+                                        <span className="font-mono font-medium text-foreground">{downloadProgress}%</span>
+                                    </div>
+                                    <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full transition-all duration-300 ease-out"
+                                            style={{ width: `${downloadProgress}%` }}
+                                        />
+                                    </div>
+                                    {downloadProgress === 100 && (
+                                        <p className="text-xs text-green-500 mt-2 animate-in fade-in duration-300">
+                                            {t("settings.check_update.installing")}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

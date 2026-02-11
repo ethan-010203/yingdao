@@ -47,6 +47,6 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: '影刀账号管理工具 ${{ github.ref_name }}'
           releaseBody: '查看更新内容请参阅 [更新日志](https://github.com/ethan-010203/yingdao/blob/main/CHANGELOG.md)。'
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
           includeUpdaterJson: true

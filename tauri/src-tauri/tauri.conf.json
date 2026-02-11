@@ -23,17 +23,8 @@
       "csp": null
     }
   },
-  "plugins": {
-    "updater": {
-      "endpoints": [
-        "https://github.com/ethan-010203/yingdao/releases/latest/download/latest.json"
-      ],
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IERDRjZGMkMwQThCNkE3QTMKUldTanA3YW93UEwyM0VEd3czbW9Vd3F4WVlWRlpHeXdiNVJudWlucHRJTHVjWis5SSthdkM2YWcK"
-    }
-  },
   "bundle": {
     "active": true,
-    "createUpdaterArtifacts": true,
     "targets": [
       "nsis"
     ],
