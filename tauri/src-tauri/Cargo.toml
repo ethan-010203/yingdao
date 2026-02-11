@@ -1,6 +1,6 @@
 [package]
-name = "tauri"
-version = "1.1.1"
+name = "yingdao-manager"
+version = "1.1.2"
 description = "影刀流程迁移工具"
 authors = ["you"]
 edition = "2021"
