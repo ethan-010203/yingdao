@@ -41,8 +41,7 @@
           "SimpChinese"
         ],
         "displayLanguageSelector": false,
-        "installMode": "both",
-        "installerName": "影刀账号管理工具"
+        "installMode": "both"
       }
     }
   }
