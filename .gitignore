@@ -1,25 +1,53 @@
 # Node
 node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm/
 dist/
+dist-ssr/
+*.local
 
 # Rust / Tauri
 tauri/src-tauri/target/
+tauri/src-tauri/Cargo.lock.backup
+*.pdb
 
 # Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.env/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
 
 # Build artifacts
 *.zip
 *.exe
+*.msi
+*.msm
+*.msp
 
-# IDE
+# IDEs
 .vscode/
 .idea/
+*.swp
+*.swo
+.project
+.settings/
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Screenshots
+# Screenshots & Media
 *.png
+*.jpg
+*.jpeg
+*.gif
+*.ico
