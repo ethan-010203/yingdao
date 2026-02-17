@@ -60,20 +60,18 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
         try {
             const config: { accounts: any[], settings?: any } = await invoke("load_config");
 
-            // Transform accounts to include IDs for frontend usage if needed //
-            // Note: backend Config.accounts is Vec<AccountConfig> without IDs. 
-            // We generate IDs based on index or simple hash for React keys/logic.
-            // But if we want to PERSIST the ID, we might need to change backend.
-            // For now, let's stick to the App.tsx logic of generating IDs on load.
-
-            const loadedAccounts = config.accounts.map((a: any, idx: number) => ({
-                id: `acc_${idx}_${Date.now()}`, // Re-generating IDs on every reload might be an issue if we rely on them for selection state.
-                // ideally backend should store IDs. 
-                // For now, we will trust that list order is preserved.
-                name: a.name || `账号${idx + 1}`,
-                username: a.username,
-                password: a.password,
-            }));
+            // Use persisted ID from backend if available; generate only for legacy accounts missing an ID
+            let needsSave = false;
+            const loadedAccounts = config.accounts.map((a: any, idx: number) => {
+                const hasId = a.id && a.id.trim() !== "";
+                if (!hasId) needsSave = true;
+                return {
+                    id: hasId ? a.id : `acc_${Date.now()}_${idx}`,
+                    name: a.name || `账号${idx + 1}`,
+                    username: a.username,
+                    password: a.password,
+                };
+            });
 
             setAccountsState(loadedAccounts);
 
@@ -84,6 +82,16 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
                     auto_update: config.settings.auto_update !== undefined ? config.settings.auto_update : true
                 });
             }
+
+            // If any account was missing an ID, save back to persist the generated IDs
+            if (needsSave && loadedAccounts.length > 0) {
+                const settingsToSave = config.settings ? {
+                    language: config.settings.language || "zh-CN",
+                    theme: config.settings.theme || "system",
+                    auto_update: config.settings.auto_update !== undefined ? config.settings.auto_update : true
+                } : defaultSettings;
+                await saveConfigToBackend(loadedAccounts, settingsToSave);
+            }
         } catch (e) {
             console.error("Failed to load config:", e);
             toast.error("加载配置失败");
@@ -92,8 +100,9 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
 
     const saveConfigToBackend = async (newAccounts: Account[], newSettings: Settings) => {
         try {
-            // Convert frontend Account objects back to backend AccountConfig
+            // Convert frontend Account objects back to backend AccountConfig (now including id)
             const accountsForBackend = newAccounts.map(a => ({
+                id: a.id,
                 name: a.name,
                 username: a.username,
                 password: a.password,

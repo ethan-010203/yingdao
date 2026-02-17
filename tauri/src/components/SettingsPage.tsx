@@ -8,6 +8,7 @@ import avatar from "@/assets/avatar.png"
 import { useConfig } from "@/contexts/ConfigContext"
 import { useTranslation } from "@/lib/i18n"
 import { invoke } from "@tauri-apps/api/core"
+import { getVersion } from "@tauri-apps/api/app"
 import { listen } from "@tauri-apps/api/event"
 import { toast } from "@/components/ui/toaster"
 
@@ -30,9 +31,14 @@ export function SettingsPage() {
 
     // Local state for UI
     const [activeTab, setActiveTab] = React.useState("general")
+    const [appVersion, setAppVersion] = React.useState("...")
     const [isChecking, setIsChecking] = React.useState(false)
     const [isDownloading, setIsDownloading] = React.useState(false)
     const [downloadProgress, setDownloadProgress] = React.useState(0)
+
+    React.useEffect(() => {
+        getVersion().then(v => setAppVersion(v)).catch(() => setAppVersion("1.2.0"))
+    }, [])
 
     const handleCheckUpdate = async () => {
         setIsChecking(true)
@@ -231,7 +237,7 @@ export function SettingsPage() {
                                 <div className="space-y-2">
                                     <h1 className="text-3xl font-bold tracking-tight">{t("settings.app.title")}</h1>
                                     <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                                        <span className="text-sm">v1.1.4</span>
+                                        <span className="text-sm">v{appVersion}</span>
                                         <span>•</span>
                                         <span className="text-sm">{t("settings.app.subtitle")}</span>
                                     </div>

@@ -37,7 +37,6 @@ pub async fn login(username: &str, password: &str) -> Result<String, String> {
     let encrypted_password = encrypt_password(password)?;
     
     let client = reqwest::Client::builder()
-        .danger_accept_invalid_certs(true)
         .build()
         .map_err(|e| format!("创建HTTP客户端失败: {}", e))?;
     

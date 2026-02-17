@@ -425,15 +425,12 @@ function App() {
       await invoke("delete_local_flows", { request: { flows: selectedFlows } });
       await refreshLocalFlows();
       setSelectedLocalIds(new Set());
-      toast.success("删除成功");
+      toast.success(t("common.success"));
       // 记录操作日志
       const flowNames = selectedFlows.map(f => f.name).join('、')
       if (user?.id) {
         await appendOperationLog(user.id, `删除了 ${selectedFlows.length} 个本地流程：${flowNames}`)
       }
-      setResults(results);
-      setCloudStep("result");
-      toast.success(t("common.success"));
     } catch (e) {
       toast.error(`${t("common.error")}: ${e}`);
     }

@@ -11,6 +11,8 @@ use crate::flow::{local, cloud, migrate};
 /// 账号配置
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AccountConfig {
+    #[serde(default)]
+    pub id: Option<String>,
     pub name: String,
     pub username: String,
     pub password: String,
