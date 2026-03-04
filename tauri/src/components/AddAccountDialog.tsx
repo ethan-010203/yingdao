@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import {
@@ -54,9 +52,9 @@ export function AddAccountDialog({
 
     const validate = () => {
         const newErrors: typeof errors = {}
-        if (!name.trim()) newErrors.name = t("accounts.name")
-        if (!username.trim()) newErrors.username = t("accounts.username")
-        if (!password.trim()) newErrors.password = t("accounts.password")
+        if (!name.trim()) newErrors.name = t("accounts.error.name_required")
+        if (!username.trim()) newErrors.username = t("accounts.error.username_required")
+        if (!password.trim()) newErrors.password = t("accounts.error.password_required")
         setErrors(newErrors)
         return Object.keys(newErrors).length === 0
     }
@@ -72,7 +70,6 @@ export function AddAccountDialog({
             await invoke<string>("login_account", {
                 username: username.trim(),
                 password: password,
-                accountType: "verify"
             })
 
             // 验证成功，保存账号
@@ -118,9 +115,9 @@ export function AddAccountDialog({
                     )}
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium">{t("accounts.flow.name")}</label>
+                        <label className="text-sm font-medium">{t("accounts.name")}</label>
                         <Input
-                            placeholder={t("accounts.flow.name")}
+                            placeholder={t("accounts.name")}
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             className={errors.name ? "border-destructive" : ""}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import { toast } from "@/components/ui/toaster"
+import { Account } from "@/contexts/ConfigContext"
 import {
     Dialog,
     DialogContent,
@@ -23,13 +24,6 @@ import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Search, Trash2, RefreshCw, ChevronLeft, ChevronRight, Loader2, User, AlertTriangle } from "lucide-react"
 import { useTranslation } from "@/lib/i18n"
-
-interface Account {
-    id: string
-    name: string
-    username: string
-    password: string
-}
 
 interface CloudFlow {
     appId: string
@@ -91,7 +85,6 @@ export function AccountDetailDialog({
             const accessToken = await invoke<string>("login_account", {
                 username: account.username,
                 password: account.password,
-                accountType: "source",
             })
             setToken(accessToken)
 
@@ -272,7 +265,7 @@ export function AccountDetailDialog({
                             </div>
                         ) : filteredFlows.length === 0 ? (
                             <div className="flex items-center justify-center h-48 text-muted-foreground">
-                                {searchQuery ? t("common.error") : t("common.loading")}
+                                {searchQuery ? t("accounts.search.empty") : t("accounts.empty")}
                             </div>
                         ) : (
                             <table className="w-full">

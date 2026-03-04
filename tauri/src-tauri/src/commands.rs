@@ -69,7 +69,6 @@ fn get_config_path(app_handle: &tauri::AppHandle) -> PathBuf {
 pub async fn login_account(
     username: String,
     password: String,
-    account_type: String,  // "source" 或 "target"
 ) -> Result<String, String> {
     let token = auth::login(&username, &password).await?;
     Ok(token)
@@ -454,7 +453,7 @@ pub async fn download_update(
 
 /// 打开安装包并退出应用
 #[tauri::command]
-pub fn open_file_and_exit(file_path: String) -> Result<(), String> {
+pub fn open_file_and_exit(app_handle: tauri::AppHandle, file_path: String) -> Result<(), String> {
     // 使用系统默认方式打开文件（Windows: cmd /c start）
     std::process::Command::new("cmd")
         .args(["/c", "start", "", &file_path])
@@ -464,7 +463,8 @@ pub fn open_file_and_exit(file_path: String) -> Result<(), String> {
     // 短暂延迟确保进程启动
     std::thread::sleep(std::time::Duration::from_millis(500));
 
-    // 退出应用
-    std::process::exit(0);
+    // 使用 Tauri 的退出方式，允许正常清理资源
+    app_handle.exit(0);
+    Ok(())
 }
 

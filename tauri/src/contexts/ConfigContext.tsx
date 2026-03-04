@@ -21,7 +21,6 @@ export interface Settings {
 interface ConfigContextType {
     settings: Settings;
     accounts: Account[];
-    setAccounts: (accounts: Account[]) => void;
     updateSettings: (newSettings: Partial<Settings>) => Promise<void>;
     saveAccounts: (newAccounts: Account[]) => Promise<void>;
     reloadConfig: () => Promise<void>;
@@ -145,7 +144,6 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
         <ConfigContext.Provider value={{
             settings,
             accounts,
-            setAccounts: setAccountsState, // purely local state update if needed, but usually we use saveAccounts
             updateSettings,
             saveAccounts,
             reloadConfig

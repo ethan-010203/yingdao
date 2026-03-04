@@ -1,7 +1,6 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import { invoke } from "@tauri-apps/api/core"
+import { Account } from "@/contexts/ConfigContext"
 import {
     Dialog,
     DialogContent,
@@ -14,13 +13,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { AlertTriangle, Loader2, Eye, EyeOff } from "lucide-react"
 import { useTranslation } from "@/lib/i18n"
-
-interface Account {
-    id: string
-    name: string
-    username: string
-    password: string
-}
 
 interface ReLoginDialogProps {
     open: boolean
@@ -61,7 +53,6 @@ export function ReLoginDialog({
             const token = await invoke<string>("login_account", {
                 username: account.username,
                 password: password,
-                accountType: "source",
             })
 
             // 更新密码（如果有变化）

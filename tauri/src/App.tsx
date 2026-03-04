@@ -6,14 +6,16 @@ import { appendOperationLog } from "@/lib/supabase";
 import { AccountDetailDialog } from "@/components/AccountDetailDialog";
 import { AddAccountDialog } from "@/components/AddAccountDialog";
 import { ReLoginDialog } from "@/components/ReLoginDialog";
+import { HomePage } from "@/components/HomePage";
+import { MigratePage } from "@/components/MigratePage";
+import { AccountsPage } from "@/components/AccountsPage";
 import { Toaster, toast } from "@/components/ui/toaster";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { SettingsPage } from "@/components/SettingsPage";
-import { useConfig } from "@/contexts/ConfigContext";
-import ShinyText from "@/components/ui/ShinyText";
+import { useConfig, Account } from "@/contexts/ConfigContext";
 import { useTranslation } from "@/lib/i18n";
 import {
   ArrowLeft,
@@ -22,26 +24,12 @@ import {
   Search,
   Trash2,
   X,
-  FolderSync,
-  Users,
-  CloudDownload,
-  HardDrive,
-  Plus,
   Loader2,
 } from "lucide-react";
 import Stepper, { Step } from "@/components/ui/Stepper";
 
 // 类型定义
-// 类型定义
-// Account is now imported from ConfigContext or defined there. 
-// But strictly speaking, App.tsx defines its own Account interface. 
-// Let's use the one from ConfigContext or keep it compatible.
-interface Account {
-  id: string;
-  name: string;
-  username: string;
-  password: string;
-}
+// Account is imported from ConfigContext
 
 interface LocalFlow {
   user_id: string;
@@ -266,22 +254,21 @@ function App() {
   const localDoMigrate = async () => {
     const creds = getTargetCredentials();
     if (!creds || !creds.username || !creds.password) {
-      toast.error("请选择或输入目标账号");
+      toast.error(t("migrate.select_account"));
       return;
     }
 
     setLocalStep("migrating");
-    setLoadingText("正在登录目标账号...");
+    setLoadingText(t("migrate.logging_in_target"));
 
     try {
       const token: string = await invoke("login_account", {
         username: creds.username,
         password: creds.password,
-        accountType: "target"
       });
 
       const selectedFlows = Array.from(selectedLocalIds).map(i => localFlows[i]);
-      setLoadingText(`正在迁移 ${selectedFlows.length} 个流程...`);
+      setLoadingText(t("migrate.migrating_flows").replace("{count}", String(selectedFlows.length)));
 
       const results: MigrateResult[] = await invoke("migrate_flows", {
         request: {
@@ -343,7 +330,6 @@ function App() {
       const token: string = await invoke("login_account", {
         username: creds.username,
         password: creds.password,
-        accountType: "source"
       });
       setSourceToken(token);
 
@@ -371,22 +357,21 @@ function App() {
   const cloudDoMigrate = async () => {
     const creds = getTargetCredentials();
     if (!creds || !creds.username || !creds.password) {
-      toast.error("请选择或输入目标账号");
+      toast.error(t("migrate.select_account"));
       return;
     }
 
     setCloudStep("migrating");
-    setLoadingText("正在登录目标账号...");
+    setLoadingText(t("migrate.logging_in_target"));
 
     try {
       const token: string = await invoke("login_account", {
         username: creds.username,
         password: creds.password,
-        accountType: "target"
       });
 
       const selectedFlows = Array.from(selectedCloudIds).map(i => cloudFlows[i]);
-      setLoadingText(`正在迁移 ${selectedFlows.length} 个流程...`);
+      setLoadingText(t("migrate.migrating_flows").replace("{count}", String(selectedFlows.length)));
 
       const results: MigrateResult[] = await invoke("migrate_flows", {
         request: {
@@ -448,7 +433,7 @@ function App() {
   ) => (
     <div className="flex items-center justify-between py-4">
       <div className="flex items-center gap-2 text-sm text-muted-foreground/70">
-        <span>每页</span>
+        <span>{t("common.pagination.per_page")}</span>
         <select
           value={pageSize}
           onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}
@@ -458,7 +443,7 @@ function App() {
           <option value={20}>20</option>
           <option value={50}>50</option>
         </select>
-        <span>条</span>
+        <span>{t("common.pagination.unit")}</span>
       </div>
       <div className="flex items-center gap-1.5">
         <Button variant="ghost" size="sm" disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)} className="rounded-lg h-8 w-8 p-0">
@@ -547,13 +532,13 @@ function App() {
         <div className="grid grid-cols-2 gap-3 p-4 rounded-2xl bg-muted/30 animate-fade-in">
           <Input
             type="text"
-            placeholder="用户名"
+            placeholder={t("migrate.manual.username")}
             value={manualUser}
             onChange={e => setManualUser(e.target.value)}
           />
           <Input
             type="password"
-            placeholder="密码"
+            placeholder={t("migrate.manual.password")}
             value={manualPwd}
             onChange={e => setManualPwd(e.target.value)}
           />
@@ -563,181 +548,6 @@ function App() {
   );
 
   // ===== 页面渲染 =====
-
-  // 设置页面
-  const renderSettings = () => (
-    <div className="h-full animate-in fade-in zoom-in-95 duration-300">
-      <SettingsPage />
-    </div>
-  );
-
-  // 首页
-  const renderHome = () => (
-    <div className="max-w-4xl mx-auto">
-      <div className="mb-10">
-        <h1 className="text-3xl font-bold">
-          <ShinyText text={t("home.welcome")} speed={3} color="#4f46e5" shineColor="#93c5fd" />
-        </h1>
-        <p className="text-muted-foreground/70 mt-2">{t("home.subtitle")}</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card
-          variant="default"
-          className="group cursor-pointer hover:-translate-y-1 hover:scale-[1.02] hover:shadow-lg hover:shadow-black/[0.06] dark:hover:shadow-black/[0.3] transition-all duration-250"
-          onClick={() => setPage("migrate")}
-        >
-          <CardHeader className="p-7">
-            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-250">
-              <FolderSync className="h-7 w-7 text-primary" />
-            </div>
-            <CardTitle className="text-lg">{t("home.migrate.title")}</CardTitle>
-            <CardDescription>{t("home.migrate.desc")}</CardDescription>
-          </CardHeader>
-        </Card>
-
-        <Card
-          variant="default"
-          className="group cursor-pointer hover:-translate-y-1 hover:scale-[1.02] hover:shadow-lg hover:shadow-black/[0.06] dark:hover:shadow-black/[0.3] transition-all duration-250"
-          onClick={() => setPage("accounts")}
-        >
-          <CardHeader className="p-7">
-            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-250">
-              <Users className="h-7 w-7 text-primary" />
-            </div>
-            <CardTitle className="text-lg">{t("accounts.title")}</CardTitle>
-            <CardDescription>
-              {t("home.accounts.desc")} ({accounts.length})
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    </div>
-  );
-
-  // 迁移选择页
-  const renderMigrate = () => (
-    <div className="max-w-4xl mx-auto">
-      <div className="mb-10">
-        <Button variant="ghost" onClick={() => setPage("home")} className="mb-4 -ml-3 text-muted-foreground/70">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          {t("common.back")}
-        </Button>
-        <h1 className="text-3xl font-bold text-gradient">{t("migrate.title")}</h1>
-        <p className="text-muted-foreground/70 mt-1">{t("migrate.subtitle")}</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card
-          className="group cursor-pointer hover:-translate-y-1 hover:scale-[1.02] hover:shadow-lg hover:shadow-black/[0.06] dark:hover:shadow-black/[0.3] transition-all duration-250"
-          onClick={startLocalMigration}
-        >
-          <CardHeader className="p-7">
-            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-250">
-              <HardDrive className="h-7 w-7 text-primary" />
-            </div>
-            <CardTitle className="text-lg">{t("migrate.local")}</CardTitle>
-            <CardDescription>{t("migrate.local.desc")}</CardDescription>
-          </CardHeader>
-        </Card>
-
-        <Card
-          className="group cursor-pointer hover:-translate-y-1 hover:scale-[1.02] hover:shadow-lg hover:shadow-black/[0.06] dark:hover:shadow-black/[0.3] transition-all duration-250"
-          onClick={startCloudMigration}
-        >
-          <CardHeader className="p-7">
-            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-250">
-              <CloudDownload className="h-7 w-7 text-primary" />
-            </div>
-            <CardTitle className="text-lg">{t("migrate.cloud")}</CardTitle>
-            <CardDescription>{t("migrate.cloud.desc")}</CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    </div>
-  );
-
-  // 账号管理页
-  const renderAccounts = () => (
-    <div className="max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-10">
-        <div>
-          <Button variant="ghost" onClick={() => setPage("home")} className="mb-4 -ml-3 text-muted-foreground/70">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            {t("common.back")}
-          </Button>
-          <h1 className="text-3xl font-bold text-gradient">{t("accounts.title")}</h1>
-        </div>
-        <Button onClick={() => { setEditingAccount(null); setShowAddForm(true); }}>
-          <Plus className="h-4 w-4 mr-2" />
-          {t("accounts.add")}
-        </Button>
-      </div>
-
-      {accounts.length === 0 ? (
-        <Card className="text-center py-16">
-          <CardContent>
-            <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-5">
-              <Users className="h-8 w-8 text-muted-foreground/50" />
-            </div>
-            <p className="text-muted-foreground/70 mb-5">{t("accounts.list")}</p>
-            <Button onClick={() => { setEditingAccount(null); setShowAddForm(true); }}>
-              {t("accounts.add")}
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-3">
-          {accounts.map(acc => (
-            <Card
-              key={acc.id}
-              className={cn("transition-all duration-200", isAdmin && "cursor-pointer hover:-translate-y-0.5 hover:shadow-md hover:shadow-black/[0.06] dark:hover:shadow-black/[0.3]")}
-              onClick={() => isAdmin && openAccountDetail(acc)}
-            >
-              <CardContent className="flex items-center justify-between p-5">
-                <div className="flex items-center gap-4">
-                  <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary">
-                    {acc.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <div className="font-semibold">{acc.name}</div>
-                    <div className="text-sm text-muted-foreground/60">{acc.username}</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-muted-foreground hover:text-foreground"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setEditingAccount(acc);
-                      setShowAddForm(true);
-                    }}
-                  >
-                    {t("common.edit")}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-muted-foreground hover:text-destructive hover:bg-destructive/8"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (confirm(t("accounts.delete.confirm").replace("{name}", acc.name))) {
-                        deleteAccount(acc.id);
-                      }
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-    </div>
-  );
 
   // 本地迁移页
   const renderLocalMigration = () => {
@@ -1119,12 +929,26 @@ function App() {
       isAdmin={isAdmin}
       language={settings.language}
     >
-      {page === "home" && renderHome()}
-      {page === "migrate" && renderMigrate()}
-      {page === "accounts" && renderAccounts()}
+      {page === "home" && <HomePage accountsCount={accounts.length} onNavigate={setPage} />}
+      {page === "migrate" && <MigratePage onNavigate={setPage} onStartLocal={startLocalMigration} onStartCloud={startCloudMigration} />}
+      {page === "accounts" && (
+        <AccountsPage
+          accounts={accounts}
+          isAdmin={isAdmin}
+          onNavigate={setPage}
+          onAddAccount={() => { setEditingAccount(null); setShowAddForm(true); }}
+          onEditAccount={(acc) => { setEditingAccount(acc); setShowAddForm(true); }}
+          onDeleteAccount={deleteAccount}
+          onOpenDetail={openAccountDetail}
+        />
+      )}
       {page === "local" && renderLocalMigration()}
       {page === "cloud" && renderCloudMigration()}
-      {page === "settings" && renderSettings()}
+      {page === "settings" && (
+        <div className="h-full animate-in fade-in zoom-in-95 duration-300">
+          <SettingsPage />
+        </div>
+      )}
 
       {/* 账号详情弹窗 */}
       <AccountDetailDialog
