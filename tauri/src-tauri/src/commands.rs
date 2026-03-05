@@ -396,6 +396,8 @@ pub async fn download_update(
 
     let client = reqwest::Client::builder()
         .user_agent("yingdao-updater")
+        .redirect(reqwest::redirect::Policy::limited(10))
+        .timeout(std::time::Duration::from_secs(300))
         .build()
         .map_err(|e| format!("创建 HTTP 客户端失败: {}", e))?;
 

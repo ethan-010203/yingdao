@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Layout } from "@/components/layout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,6 +27,7 @@ import {
   Loader2,
 } from "lucide-react";
 import Stepper, { Step } from "@/components/ui/Stepper";
+import { listen } from "@tauri-apps/api/event";
 
 // 类型定义
 // Account is imported from ConfigContext
@@ -53,6 +54,19 @@ interface MigrateResult {
   message: string;
 }
 
+interface UpdateInfo {
+  hasUpdate: boolean;
+  currentVersion: string;
+  latestVersion: string;
+  downloadUrl: string | null;
+}
+
+interface DownloadProgressPayload {
+  downloaded: number;
+  total: number;
+  percentage: number;
+}
+
 
 type Theme = "light" | "dark" | "system";
 
@@ -69,6 +83,54 @@ function App() {
   const handleUpdateSettings = (newSettings: Partial<typeof settings>) => {
     updateSettings(newSettings);
   };
+
+  // ===== 自动检测更新 =====
+  const handleAutoDownload = useCallback(async (downloadUrl: string) => {
+    const unlisten = await listen<DownloadProgressPayload>("download-progress", () => {
+      // Progress is handled by SettingsPage if user navigates there
+    });
+    try {
+      const filePath = await invoke<string>("download_update", { downloadUrl });
+      unlisten();
+      toast.success(t("settings.check_update.installing"));
+      await new Promise(resolve => setTimeout(resolve, 800));
+      await invoke("open_file_and_exit", { filePath });
+    } catch (error) {
+      unlisten();
+      console.error("Auto-update download failed:", error);
+      toast.error(t("settings.check_update.download_failed") + ": " + String(error));
+    }
+  }, [t]);
+
+  useEffect(() => {
+    if (!settings.auto_update) return;
+
+    const timer = setTimeout(async () => {
+      // 如果用户已经在设置页面，跳过自动检测（设置页有手动检查按钮）
+      if (page === "settings") return;
+      try {
+        const info = await invoke<UpdateInfo>("check_for_update");
+        if (info.hasUpdate) {
+          toast.success(
+            t("settings.check_update.found").replace("{version}", `v${info.latestVersion}`),
+            {
+              duration: 15000,
+              action: info.downloadUrl
+                ? {
+                  label: t("settings.check_update.download"),
+                  onClick: () => handleAutoDownload(info.downloadUrl!),
+                }
+                : undefined,
+            }
+          );
+        }
+      } catch (error) {
+        console.error("Auto update check failed:", error);
+      }
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [settings.auto_update, t, handleAutoDownload]);
 
 
   // 页面导航

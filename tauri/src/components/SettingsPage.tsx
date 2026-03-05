@@ -224,7 +224,7 @@ export function SettingsPage() {
 
                     {/* About Tab */}
                     {activeTab === "about" && (
-                        <div className="flex flex-col items-center justify-center py-12 animate-in slide-in-from-bottom-2 duration-300 text-center space-y-8">
+                        <div className="flex flex-col items-center py-8 pb-36 animate-in slide-in-from-bottom-2 duration-300 text-center space-y-8">
 
                             {/* App Info */}
                             <div className="flex flex-col items-center gap-4">
