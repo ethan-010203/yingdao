@@ -484,7 +484,7 @@ function App() {
   ) => (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold">{title}</h3>
-      <div className="space-y-2">
+      <div className="space-y-2 max-h-[240px] overflow-y-auto">
         {accounts.map(acc => (
           <div
             key={acc.id}
@@ -640,11 +640,14 @@ function App() {
                 {renderPagination(localCurrentPage, localTotalPages, setLocalCurrentPage, localPageSize, setLocalPageSize)}
                 <div className="flex items-center justify-between pt-4 border-t border-border/20">
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setSelectedLocalIds(new Set(filteredLocalFlows.map(f => localFlows.indexOf(f))))}>
-                      {t("common.save")}
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => setSelectedLocalIds(new Set())}>
-                      {t("common.cancel")}
+                    <Button variant="outline" size="sm" onClick={() => {
+                      if (selectedLocalIds.size > 0) {
+                        setSelectedLocalIds(new Set());
+                      } else {
+                        setSelectedLocalIds(new Set(filteredLocalFlows.map(f => localFlows.indexOf(f))));
+                      }
+                    }}>
+                      {selectedLocalIds.size > 0 ? t("common.deselect_all") : t("common.select_all")}
                     </Button>
                     {isAdmin && (
                       <Button variant="destructive" size="sm" onClick={deleteLocalFlows} disabled={selectedLocalIds.size === 0}>
@@ -680,7 +683,7 @@ function App() {
                     onClick={localDoMigrate}
                     disabled={!targetAccountId || (targetAccountId === "manual" && (!targetManualUser || !targetManualPwd))}
                   >
-                    {t("migrate.step.migrating")}
+                    {t("migrate.start")}
                   </Button>
                 </div>
               </CardContent>
@@ -834,11 +837,14 @@ function App() {
                 {renderPagination(cloudCurrentPage, cloudTotalPages, setCloudCurrentPage, cloudPageSize, setCloudPageSize)}
                 <div className="flex items-center justify-between pt-4 border-t border-border/20">
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setSelectedCloudIds(new Set(filteredCloudFlows.map(f => cloudFlows.indexOf(f))))}>
-                      {t("common.save")}
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => setSelectedCloudIds(new Set())}>
-                      {t("common.cancel")}
+                    <Button variant="outline" size="sm" onClick={() => {
+                      if (selectedCloudIds.size > 0) {
+                        setSelectedCloudIds(new Set());
+                      } else {
+                        setSelectedCloudIds(new Set(filteredCloudFlows.map(f => cloudFlows.indexOf(f))));
+                      }
+                    }}>
+                      {selectedCloudIds.size > 0 ? t("common.deselect_all") : t("common.select_all")}
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => setCloudStep("source")}>
                       <ArrowLeft className="h-4 w-4 mr-1" />
@@ -872,7 +878,7 @@ function App() {
                     onClick={cloudDoMigrate}
                     disabled={!targetAccountId || (targetAccountId === "manual" && (!targetManualUser || !targetManualPwd))}
                   >
-                    {t("migrate.step.migrating")}
+                    {t("migrate.start")}
                   </Button>
                 </div>
               </CardContent>
