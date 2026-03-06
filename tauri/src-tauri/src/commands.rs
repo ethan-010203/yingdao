@@ -24,6 +24,12 @@ pub struct SettingsConfig {
     pub language: String,
     pub theme: String, // "light", "dark", "system"
     pub auto_update: bool,
+    #[serde(default = "default_migrate_suffix")]
+    pub migrate_suffix: String,
+}
+
+fn default_migrate_suffix() -> String {
+    "{name}_云迁_接收于{datetime}".to_string()
 }
 
 impl Default for SettingsConfig {
@@ -32,6 +38,7 @@ impl Default for SettingsConfig {
             language: "zh-CN".to_string(),
             theme: "system".to_string(),
             auto_update: true,
+            migrate_suffix: default_migrate_suffix(),
         }
     }
 }
@@ -93,6 +100,8 @@ pub struct MigrateRequest {
     pub flows: Vec<serde_json::Value>,
     pub target_token: String,
     pub source_token: Option<String>,
+    #[serde(default = "default_migrate_suffix")]
+    pub suffix_template: String,
 }
 
 /// 迁移结果
@@ -103,66 +112,77 @@ pub struct MigrateResult {
     pub message: String,
 }
 
-/// 迁移流程
+/// 迁移流程（并行，最多 3 路并发，保持顺序）
 #[tauri::command]
 pub async fn migrate_flows(request: MigrateRequest) -> Vec<MigrateResult> {
-    let mut results = Vec::new();
-    
-    for flow_data in &request.flows {
-        let result = if request.flow_type == "local" {
-            // 本地迁移
-            match serde_json::from_value::<local::LocalFlow>(flow_data.clone()) {
-                Ok(flow) => {
-                    let name = flow.name.clone();
-                    match migrate::migrate_local_flow(&flow, &request.target_token).await {
-                        Ok(new_name) => MigrateResult {
-                            success: true,
-                            name,
-                            message: format!("已迁移为: {}", new_name),
-                        },
+    use futures_util::stream::{self, StreamExt};
+
+    let flow_type = request.flow_type.clone();
+    let target_token = request.target_token.clone();
+    let source_token = request.source_token.clone();
+    let suffix_template = request.suffix_template.clone();
+
+    let results: Vec<MigrateResult> = stream::iter(request.flows.into_iter())
+        .map(|flow_data| {
+            let flow_type = flow_type.clone();
+            let target_token = target_token.clone();
+            let source_token = source_token.clone();
+            let suffix_template = suffix_template.clone();
+            async move {
+                if flow_type == "local" {
+                    match serde_json::from_value::<local::LocalFlow>(flow_data) {
+                        Ok(flow) => {
+                            let name = flow.name.clone();
+                            match migrate::migrate_local_flow(&flow, &target_token, &suffix_template).await {
+                                Ok(new_name) => MigrateResult {
+                                    success: true,
+                                    name,
+                                    message: format!("已迁移为: {}", new_name),
+                                },
+                                Err(e) => MigrateResult {
+                                    success: false,
+                                    name,
+                                    message: e,
+                                },
+                            }
+                        }
                         Err(e) => MigrateResult {
                             success: false,
-                            name,
-                            message: e,
+                            name: "未知".to_string(),
+                            message: format!("解析流程数据失败: {}", e),
+                        },
+                    }
+                } else {
+                    let source_token = source_token.as_deref().unwrap_or("");
+                    match serde_json::from_value::<cloud::CloudFlow>(flow_data) {
+                        Ok(flow) => {
+                            let name = flow.app_name.clone();
+                            match migrate::migrate_cloud_flow(&flow, source_token, &target_token, &suffix_template).await {
+                                Ok(new_name) => MigrateResult {
+                                    success: true,
+                                    name,
+                                    message: format!("已迁移为: {}", new_name),
+                                },
+                                Err(e) => MigrateResult {
+                                    success: false,
+                                    name,
+                                    message: e,
+                                },
+                            }
+                        }
+                        Err(e) => MigrateResult {
+                            success: false,
+                            name: "未知".to_string(),
+                            message: format!("解析流程数据失败: {}", e),
                         },
                     }
                 }
-                Err(e) => MigrateResult {
-                    success: false,
-                    name: "未知".to_string(),
-                    message: format!("解析流程数据失败: {}", e),
-                },
             }
-        } else {
-            // 云端迁移
-            let source_token = request.source_token.as_deref().unwrap_or("");
-            match serde_json::from_value::<cloud::CloudFlow>(flow_data.clone()) {
-                Ok(flow) => {
-                    let name = flow.app_name.clone();
-                    match migrate::migrate_cloud_flow(&flow, source_token, &request.target_token).await {
-                        Ok(new_name) => MigrateResult {
-                            success: true,
-                            name,
-                            message: format!("已迁移为: {}", new_name),
-                        },
-                        Err(e) => MigrateResult {
-                            success: false,
-                            name,
-                            message: e,
-                        },
-                    }
-                }
-                Err(e) => MigrateResult {
-                    success: false,
-                    name: "未知".to_string(),
-                    message: format!("解析流程数据失败: {}", e),
-                },
-            }
-        };
-        
-        results.push(result);
-    }
-    
+        })
+        .buffered(3)
+        .collect()
+        .await;
+
     results
 }
 
@@ -456,16 +476,21 @@ pub async fn download_update(
 /// 打开安装包并退出应用
 #[tauri::command]
 pub fn open_file_and_exit(app_handle: tauri::AppHandle, file_path: String) -> Result<(), String> {
-    // 使用系统默认方式打开文件（Windows: cmd /c start）
+    let path = std::path::Path::new(&file_path);
+
+    // 校验路径必须在桌面目录下且为 .exe 文件，防止命令注入
+    let desktop = dirs_next::desktop_dir()
+        .ok_or_else(|| "无法获取桌面路径".to_string())?;
+    if !path.starts_with(&desktop) || path.extension().and_then(|e| e.to_str()) != Some("exe") {
+        return Err("无效的文件路径".to_string());
+    }
+
     std::process::Command::new("cmd")
         .args(["/c", "start", "", &file_path])
         .spawn()
         .map_err(|e| format!("打开文件失败: {}", e))?;
 
-    // 短暂延迟确保进程启动
     std::thread::sleep(std::time::Duration::from_millis(500));
-
-    // 使用 Tauri 的退出方式，允许正常清理资源
     app_handle.exit(0);
     Ok(())
 }

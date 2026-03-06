@@ -1,32 +1,32 @@
 import * as React from "react"
-import { User, Globe, Heart, Moon, Sun, Monitor, Download } from "lucide-react"
+import { User, Globe, Heart, Moon, Sun, Monitor, Download, Search, ArrowLeft, ArrowRight, ScrollText, Loader2, FileText, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 // @ts-ignore
 import avatar from "@/assets/avatar.png"
 import { useConfig } from "@/contexts/ConfigContext"
+import { useAuth } from "@/contexts/AuthContext"
 import { useTranslation } from "@/lib/i18n"
 import { invoke } from "@tauri-apps/api/core"
 import { getVersion } from "@tauri-apps/api/app"
 import { listen } from "@tauri-apps/api/event"
 import { toast } from "@/components/ui/toaster"
+import { fetchOperationLogs, type OperationLogEntry, type ActionType } from "@/lib/supabase"
+import { useAutoPageSize } from "@/hooks/useAutoPageSize"
+import type { UpdateInfo, DownloadProgressPayload } from "@/types"
 
-interface UpdateInfo {
-    hasUpdate: boolean
-    currentVersion: string
-    latestVersion: string
-    downloadUrl: string | null
-}
+const ACTION_TYPES: ActionType[] = [
+    'add_account', 'edit_account', 'delete_account',
+    'migrate_local', 'migrate_cloud', 'delete_flow',
+]
 
-interface DownloadProgressPayload {
-    downloaded: number
-    total: number
-    percentage: number
-}
+const LOGS_ROW_HEIGHT = 45
 
 export function SettingsPage() {
     const { settings, updateSettings } = useConfig()
+    const { isAdmin } = useAuth()
     const { t } = useTranslation()
 
     // Local state for UI
@@ -36,9 +36,69 @@ export function SettingsPage() {
     const [isDownloading, setIsDownloading] = React.useState(false)
     const [downloadProgress, setDownloadProgress] = React.useState(0)
 
+    // Logs state
+    const [logs, setLogs] = React.useState<OperationLogEntry[]>([])
+    const [logsTotal, setLogsTotal] = React.useState(0)
+    const [logsPage, setLogsPage] = React.useState(1)
+    const [logsLoading, setLogsLoading] = React.useState(false)
+    const [filterAction, setFilterAction] = React.useState("all")
+    const [filterUser, setFilterUser] = React.useState("")
+    const logsTableRef = React.useRef<HTMLDivElement>(null)
+    const logsPageSize = useAutoPageSize(logsTableRef, LOGS_ROW_HEIGHT)
+
     React.useEffect(() => {
         getVersion().then(v => setAppVersion(v)).catch(() => setAppVersion("1.2.0"))
     }, [])
+
+    const loadLogs = React.useCallback(async () => {
+        setLogsLoading(true)
+        try {
+            const result = await fetchOperationLogs({
+                page: logsPage,
+                pageSize: logsPageSize,
+                action: filterAction !== "all" ? filterAction : undefined,
+                username: filterUser || undefined,
+            })
+            setLogs(result.data)
+            setLogsTotal(result.total)
+        } catch {
+            toast.error(t("common.error"))
+        } finally {
+            setLogsLoading(false)
+        }
+    }, [logsPage, logsPageSize, filterAction, filterUser, t])
+
+    React.useEffect(() => {
+        if (activeTab !== "logs" || !isAdmin || logsPageSize < 1) return
+        loadLogs()
+    }, [activeTab, isAdmin, logsPageSize, loadLogs])
+
+    const logsTotalPages = Math.max(1, Math.ceil(logsTotal / logsPageSize))
+
+    const suffixPreview = React.useMemo(() => {
+        const now = new Date()
+        const pad = (n: number) => String(n).padStart(2, '0')
+        const datetime = `${now.getFullYear()}年${pad(now.getMonth() + 1)}月${pad(now.getDate())}日 ${pad(now.getHours())}时${pad(now.getMinutes())}分${pad(now.getSeconds())}秒`
+        const date = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+        const time = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`
+        return settings.migrate_suffix
+            .replace("{name}", "示例流程")
+            .replace("{datetime}", datetime)
+            .replace("{date}", date)
+            .replace("{time}", time)
+    }, [settings.migrate_suffix])
+
+    const formatLogTime = (iso: string) => {
+        try {
+            return new Date(iso).toLocaleString('zh-CN', {
+                timeZone: 'Asia/Shanghai',
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit', second: '2-digit',
+            })
+        } catch {
+            return iso
+        }
+    }
 
     const handleCheckUpdate = async () => {
         setIsChecking(true)
@@ -102,9 +162,9 @@ export function SettingsPage() {
     }
 
     return (
-        <div className="flex flex-col h-full bg-background relative animate-in fade-in duration-300">
+        <div className="flex flex-col h-full overflow-hidden bg-background relative animate-in fade-in duration-300">
             {/* Header / Tabs */}
-            <div className="flex items-center justify-between px-8 py-6 border-b border-border/40 bg-card/50 backdrop-blur-sm sticky top-0 z-10 transition-colors">
+            <div className="shrink-0 flex items-center justify-between px-8 py-4 border-b border-border/40 bg-card/50 backdrop-blur-sm z-10 transition-colors">
                 <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg">
                     <button
                         onClick={() => setActiveTab("general")}
@@ -117,6 +177,19 @@ export function SettingsPage() {
                     >
                         {t("settings.general")}
                     </button>
+                    {isAdmin && (
+                        <button
+                            onClick={() => setActiveTab("logs")}
+                            className={cn(
+                                "px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200",
+                                activeTab === "logs"
+                                    ? "bg-background text-foreground shadow-sm"
+                                    : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                            )}
+                        >
+                            {t("settings.logs")}
+                        </button>
+                    )}
                     <button
                         onClick={() => setActiveTab("about")}
                         className={cn(
@@ -132,12 +205,12 @@ export function SettingsPage() {
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-auto p-8">
-                <div className="max-w-4xl mx-auto space-y-8">
+            <div className="flex-1 min-h-0 p-6">
+                <div className="h-full max-w-4xl mx-auto">
 
                     {/* General Tab */}
                     {activeTab === "general" && (
-                        <div className="grid gap-6 animate-in slide-in-from-bottom-2 duration-300">
+                        <div className="h-full overflow-y-auto grid gap-6 pb-4 content-start animate-in slide-in-from-bottom-2 duration-300">
                             {/* Language */}
                             <Card>
                                 <CardHeader>
@@ -219,12 +292,153 @@ export function SettingsPage() {
                                 </CardContent>
                             </Card>
 
+                            {/* Migrate Suffix Template */}
+                            <Card>
+                                <CardHeader>
+                                    <div className="flex items-center gap-2">
+                                        <FileText className="h-5 w-5 text-primary" />
+                                        <CardTitle>{t("settings.migrate_suffix")}</CardTitle>
+                                    </div>
+                                    <CardDescription>
+                                        {t("settings.migrate_suffix.desc")}
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="grid gap-2">
+                                        <label className="text-sm font-medium leading-none">
+                                            {t("settings.migrate_suffix.label")}
+                                        </label>
+                                        <div className="flex gap-2">
+                                            <Input
+                                                value={settings.migrate_suffix}
+                                                onChange={e => updateSettings({ migrate_suffix: e.target.value })}
+                                                className="font-mono text-sm"
+                                                placeholder="{name}_云迁_接收于{datetime}"
+                                            />
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="shrink-0 gap-1.5"
+                                                onClick={() => updateSettings({ migrate_suffix: "{name}_云迁_接收于{datetime}" })}
+                                            >
+                                                <RotateCcw className="h-3.5 w-3.5" />
+                                                {t("settings.migrate_suffix.reset")}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    <div className="text-xs text-muted-foreground/70">
+                                        {t("settings.migrate_suffix.variables")}
+                                    </div>
+                                    <div className="rounded-lg bg-muted/40 p-3 space-y-1">
+                                        <div className="text-xs font-medium text-muted-foreground">{t("settings.migrate_suffix.preview")}</div>
+                                        <div className="text-sm font-mono break-all">
+                                            {suffixPreview}
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                        </div>
+                    )}
+
+                    {/* Logs Tab (Admin only) */}
+                    {activeTab === "logs" && isAdmin && (
+                        <div className="h-full flex flex-col animate-in slide-in-from-bottom-2 duration-300">
+                            {/* Filters */}
+                            <div className="shrink-0 flex items-center gap-3 mb-3">
+                                <div className="flex items-center gap-2">
+                                    <ScrollText className="h-5 w-5 text-primary" />
+                                    <span className="font-semibold">{t("settings.logs.title")}</span>
+                                </div>
+                                <select
+                                    value={filterAction}
+                                    onChange={e => { setFilterAction(e.target.value); setLogsPage(1); }}
+                                    className="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                >
+                                    <option value="all">{t("settings.logs.filter.all")}</option>
+                                    {ACTION_TYPES.map(a => (
+                                        <option key={a} value={a}>{t(`settings.logs.action.${a}`)}</option>
+                                    ))}
+                                </select>
+                                <div className="relative flex-1 max-w-[240px]">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+                                    <Input
+                                        placeholder={t("settings.logs.filter.user")}
+                                        value={filterUser}
+                                        onChange={e => { setFilterUser(e.target.value); setLogsPage(1); }}
+                                        className="pl-9 h-9 text-sm"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Table header */}
+                            <div className="shrink-0 rounded-t-xl border border-b-0 border-border/30 bg-muted/30">
+                                <div className="flex text-sm font-medium text-muted-foreground">
+                                    <div className="px-4 py-2.5 w-[170px]">{t("settings.logs.time")}</div>
+                                    <div className="px-4 py-2.5 w-[100px]">{t("settings.logs.user")}</div>
+                                    <div className="px-4 py-2.5 w-[110px]">{t("settings.logs.action")}</div>
+                                    <div className="px-4 py-2.5 flex-1">{t("settings.logs.detail")}</div>
+                                </div>
+                            </div>
+
+                            {/* Table body — dynamic height */}
+                            <div ref={logsTableRef} className="flex-1 min-h-0 rounded-b-xl border border-border/30 overflow-hidden">
+                                {logsLoading ? (
+                                    <div className="flex items-center justify-center h-full">
+                                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                                    </div>
+                                ) : logs.length === 0 ? (
+                                    <div className="flex items-center justify-center h-full text-muted-foreground/60">
+                                        {t("settings.logs.empty")}
+                                    </div>
+                                ) : (
+                                    logs.map(log => (
+                                        <div key={log.id} className="flex items-center border-b border-border/20 last:border-0 hover:bg-muted/20 transition-colors text-sm">
+                                            <div className="px-4 py-2.5 w-[170px] text-muted-foreground/70 font-mono text-xs whitespace-nowrap">
+                                                {formatLogTime(log.created_at)}
+                                            </div>
+                                            <div className="px-4 py-2.5 w-[100px] font-medium truncate">{log.username}</div>
+                                            <div className="px-4 py-2.5 w-[110px]">
+                                                <span className={cn(
+                                                    "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium",
+                                                    log.action.includes('delete') ? "bg-red-500/10 text-red-600 dark:text-red-400" :
+                                                    log.action.includes('migrate') ? "bg-blue-500/10 text-blue-600 dark:text-blue-400" :
+                                                    "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                                                )}>
+                                                    {t(`settings.logs.action.${log.action}`)}
+                                                </span>
+                                            </div>
+                                            <div className="px-4 py-2.5 flex-1 text-muted-foreground truncate" title={log.detail}>
+                                                {log.detail}
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+
+                            {/* Pagination */}
+                            <div className="shrink-0 flex items-center justify-between pt-2">
+                                <span className="text-sm text-muted-foreground/70">
+                                    {t("settings.logs.total").replace("{total}", String(logsTotal))}
+                                </span>
+                                <div className="flex items-center gap-1.5">
+                                    <Button variant="ghost" size="sm" disabled={logsPage <= 1} onClick={() => setLogsPage(logsPage - 1)} className="rounded-lg h-8 w-8 p-0">
+                                        <ArrowLeft className="h-4 w-4" />
+                                    </Button>
+                                    <span className="text-sm text-muted-foreground/70 min-w-[60px] text-center font-medium">
+                                        {logsPage} / {logsTotalPages}
+                                    </span>
+                                    <Button variant="ghost" size="sm" disabled={logsPage >= logsTotalPages} onClick={() => setLogsPage(logsPage + 1)} className="rounded-lg h-8 w-8 p-0">
+                                        <ArrowRight className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
                         </div>
                     )}
 
                     {/* About Tab */}
                     {activeTab === "about" && (
-                        <div className="flex flex-col items-center py-8 pb-36 animate-in slide-in-from-bottom-2 duration-300 text-center space-y-8">
+                        <div className="h-full overflow-y-auto flex flex-col items-center py-8 pb-36 animate-in slide-in-from-bottom-2 duration-300 text-center space-y-8">
 
                             {/* App Info */}
                             <div className="flex flex-col items-center gap-4">

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Layout } from "@/components/layout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,10 +13,15 @@ import { Toaster, toast } from "@/components/ui/toaster";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { SettingsPage } from "@/components/SettingsPage";
 import { useConfig, Account } from "@/contexts/ConfigContext";
 import { useTranslation } from "@/lib/i18n";
+import { useAutoPageSize } from "@/hooks/useAutoPageSize";
 import {
   ArrowLeft,
   ArrowRight,
@@ -28,49 +33,8 @@ import {
 } from "lucide-react";
 import Stepper, { Step } from "@/components/ui/Stepper";
 import { listen } from "@tauri-apps/api/event";
+import type { LocalFlow, CloudFlow, MigrateResult, UpdateInfo, DownloadProgressPayload, Theme, Page } from "@/types";
 
-// 类型定义
-// Account is imported from ConfigContext
-
-interface LocalFlow {
-  user_id: string;
-  app_id: string;
-  uuid: string;
-  name: string;
-  update_time: string;
-  robot_path: string;
-  package_data: any;
-}
-
-interface CloudFlow {
-  appId: string;
-  appName: string;
-  updateTime?: string;
-}
-
-interface MigrateResult {
-  success: boolean;
-  name: string;
-  message: string;
-}
-
-interface UpdateInfo {
-  hasUpdate: boolean;
-  currentVersion: string;
-  latestVersion: string;
-  downloadUrl: string | null;
-}
-
-interface DownloadProgressPayload {
-  downloaded: number;
-  total: number;
-  percentage: number;
-}
-
-
-type Theme = "light" | "dark" | "system";
-
-type Page = "home" | "migrate" | "accounts" | "local" | "cloud" | "settings";
 type LocalStep = "list" | "target" | "migrating" | "result";
 type CloudStep = "source" | "list" | "target" | "migrating" | "result";
 
@@ -107,7 +71,7 @@ function App() {
 
     const timer = setTimeout(async () => {
       // 如果用户已经在设置页面，跳过自动检测（设置页有手动检查按钮）
-      if (page === "settings") return;
+      if (pageRef.current === "settings") return;
       try {
         const info = await invoke<UpdateInfo>("check_for_update");
         if (info.hasUpdate) {
@@ -135,6 +99,8 @@ function App() {
 
   // 页面导航
   const [page, setPage] = useState<Page>("home");
+  const pageRef = useRef(page);
+  pageRef.current = page;
   const [localStep, setLocalStep] = useState<LocalStep>("list");
   const [cloudStep, setCloudStep] = useState<CloudStep>("source");
 
@@ -144,10 +110,11 @@ function App() {
 
   // 本地迁移状态
   const [localFlows, setLocalFlows] = useState<LocalFlow[]>([]);
-  const [selectedLocalIds, setSelectedLocalIds] = useState<Set<number>>(new Set());
+  const [selectedLocalIds, setSelectedLocalIds] = useState<Set<string>>(new Set());
   const [localSearch, setLocalSearch] = useState("");
-  const [localPageSize, setLocalPageSize] = useState(10);
   const [localCurrentPage, setLocalCurrentPage] = useState(1);
+  const localListRef = useRef<HTMLDivElement>(null);
+  const localPageSize = useAutoPageSize(localListRef, 48);
 
   // 云端迁移状态
   const [sourceAccountId, setSourceAccountId] = useState("");
@@ -155,10 +122,11 @@ function App() {
   const [sourceManualPwd, setSourceManualPwd] = useState("");
   const [sourceToken, setSourceToken] = useState("");
   const [cloudFlows, setCloudFlows] = useState<CloudFlow[]>([]);
-  const [selectedCloudIds, setSelectedCloudIds] = useState<Set<number>>(new Set());
+  const [selectedCloudIds, setSelectedCloudIds] = useState<Set<string>>(new Set());
   const [cloudSearch, setCloudSearch] = useState("");
-  const [cloudPageSize, setCloudPageSize] = useState(10);
   const [cloudCurrentPage, setCloudCurrentPage] = useState(1);
+  const cloudListRef = useRef<HTMLDivElement>(null);
+  const cloudPageSize = useAutoPageSize(cloudListRef, 48);
 
   // 目标账号
   const [targetAccountId, setTargetAccountId] = useState("");
@@ -176,6 +144,7 @@ function App() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [reLoginAccount, setReLoginAccount] = useState<Account | null>(null);
   const [reLoginOpen, setReLoginOpen] = useState(false);
+  const [deleteFlowsConfirmOpen, setDeleteFlowsConfirmOpen] = useState(false);
 
   // 初始化 - Config is loaded by Context now
   // useEffect(() => {
@@ -194,7 +163,7 @@ function App() {
     toast.success(t("common.success"));
     // 记录操作日志
     if (user?.id && acc) {
-      await appendOperationLog(user.id, `删除了账号「${acc.username}」`)
+      await appendOperationLog(user.id, username || '', 'delete_account', `删除了账号「${acc.username}」`)
     }
   };
 
@@ -207,7 +176,7 @@ function App() {
       toast.success(t("common.success"));
       // 记录操作日志
       if (user?.id) {
-        await appendOperationLog(user.id, `编辑了账号「${data.username}」`)
+        await appendOperationLog(user.id, username || '', 'edit_account', `编辑了账号「${data.username}」`)
       }
     } else {
       const newAcc: Account = {
@@ -219,7 +188,7 @@ function App() {
       toast.success(t("common.success"));
       // 记录操作日志
       if (user?.id) {
-        await appendOperationLog(user.id, `添加了账号「${data.username}」`)
+        await appendOperationLog(user.id, username || '', 'add_account', `添加了账号「${data.username}」`)
       }
     }
     setEditingAccount(null);
@@ -329,7 +298,7 @@ function App() {
         password: creds.password,
       });
 
-      const selectedFlows = Array.from(selectedLocalIds).map(i => localFlows[i]);
+      const selectedFlows = localFlows.filter(f => selectedLocalIds.has(f.uuid));
       setLoadingText(t("migrate.migrating_flows").replace("{count}", String(selectedFlows.length)));
 
       const results: MigrateResult[] = await invoke("migrate_flows", {
@@ -337,6 +306,7 @@ function App() {
           flow_type: "local",
           flows: selectedFlows,
           target_token: token,
+          suffix_template: settings.migrate_suffix,
         }
       });
 
@@ -346,7 +316,7 @@ function App() {
       const successCount = results.filter(r => r.success).length
       const flowNames = selectedFlows.map(f => f.name).join('、')
       if (user?.id) {
-        await appendOperationLog(user.id, `本地迁移 ${successCount}/${selectedFlows.length} 个流程到账号「${creds.name}」：${flowNames}`)
+        await appendOperationLog(user.id, username || '', 'migrate_local', `本地迁移 ${successCount}/${selectedFlows.length} 个流程到账号「${creds.name}」：${flowNames}`)
       }
     } catch (e) {
       toast.error(`${t("common.error")}: ${e}`);
@@ -432,7 +402,7 @@ function App() {
         password: creds.password,
       });
 
-      const selectedFlows = Array.from(selectedCloudIds).map(i => cloudFlows[i]);
+      const selectedFlows = cloudFlows.filter(f => selectedCloudIds.has(f.appId));
       setLoadingText(t("migrate.migrating_flows").replace("{count}", String(selectedFlows.length)));
 
       const results: MigrateResult[] = await invoke("migrate_flows", {
@@ -441,6 +411,7 @@ function App() {
           flows: selectedFlows,
           target_token: token,
           source_token: sourceToken,
+          suffix_template: settings.migrate_suffix,
         }
       });
 
@@ -450,7 +421,7 @@ function App() {
       const successCount = results.filter(r => r.success).length
       const flowNames = selectedFlows.map(f => f.appName).join('、')
       if (user?.id) {
-        await appendOperationLog(user.id, `云端迁移 ${successCount}/${selectedFlows.length} 个流程到账号「${creds.name}」：${flowNames}`)
+        await appendOperationLog(user.id, username || '', 'migrate_cloud', `云端迁移 ${successCount}/${selectedFlows.length} 个流程到账号「${creds.name}」：${flowNames}`)
       }
     } catch (e) {
       toast.error(`${t("common.error")}: ${e}`);
@@ -460,11 +431,14 @@ function App() {
   };
 
   // 删除本地流程
-  const deleteLocalFlows = async () => {
+  const confirmDeleteLocalFlows = () => {
     if (selectedLocalIds.size === 0) return;
-    if (!confirm(t("accounts.delete.flows.confirm").replace("{count}", String(selectedLocalIds.size)))) return;
+    setDeleteFlowsConfirmOpen(true);
+  };
 
-    const selectedFlows = Array.from(selectedLocalIds).map(i => localFlows[i]);
+  const executeDeleteLocalFlows = async () => {
+    setDeleteFlowsConfirmOpen(false);
+    const selectedFlows = localFlows.filter(f => selectedLocalIds.has(f.uuid));
     setLoading(true);
     setLoadingText(t("common.loading"));
 
@@ -473,10 +447,9 @@ function App() {
       await refreshLocalFlows();
       setSelectedLocalIds(new Set());
       toast.success(t("common.success"));
-      // 记录操作日志
       const flowNames = selectedFlows.map(f => f.name).join('、')
       if (user?.id) {
-        await appendOperationLog(user.id, `删除了 ${selectedFlows.length} 个本地流程：${flowNames}`)
+        await appendOperationLog(user.id, username || '', 'delete_flow', `删除了 ${selectedFlows.length} 个本地流程：${flowNames}`)
       }
     } catch (e) {
       toast.error(`${t("common.error")}: ${e}`);
@@ -490,23 +463,8 @@ function App() {
     currentPage: number,
     totalPages: number,
     setPage: (p: number) => void,
-    pageSize: number,
-    setPageSize: (s: number) => void
   ) => (
-    <div className="flex items-center justify-between py-4">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground/70">
-        <span>{t("common.pagination.per_page")}</span>
-        <select
-          value={pageSize}
-          onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}
-          className="h-8 rounded-xl border-0 bg-muted/50 px-2.5 text-sm focus:ring-2 focus:ring-ring/30 outline-none transition-all"
-        >
-          <option value={10}>10</option>
-          <option value={20}>20</option>
-          <option value={50}>50</option>
-        </select>
-        <span>{t("common.pagination.unit")}</span>
-      </div>
+    <div className="flex items-center justify-end py-2">
       <div className="flex items-center gap-1.5">
         <Button variant="ghost" size="sm" disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)} className="rounded-lg h-8 w-8 p-0">
           <ArrowLeft className="h-4 w-4" />
@@ -544,15 +502,15 @@ function App() {
     setManualPwd: (p: string) => void,
     title: string
   ) => (
-    <div className="space-y-4">
-      <h3 className="text-lg font-semibold">{title}</h3>
-      <div className="space-y-2 max-h-[240px] overflow-y-auto">
+    <div className="space-y-3">
+      <h3 className="text-base font-semibold">{title}</h3>
+      <div className="space-y-1.5 max-h-[240px] overflow-y-auto">
         {accounts.map(acc => (
           <div
             key={acc.id}
             onClick={() => setSelectedId(acc.id)}
             className={cn(
-              "flex items-center gap-3 p-4 rounded-2xl cursor-pointer transition-all duration-200",
+              "flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200",
               selectedId === acc.id
                 ? "bg-primary/8 shadow-sm shadow-primary/10 ring-1 ring-primary/20"
                 : "bg-muted/30 hover:bg-muted/50"
@@ -565,8 +523,8 @@ function App() {
               {selectedId === acc.id && <div className="w-2 h-2 rounded-full bg-primary" />}
             </div>
             <div className="flex-1">
-              <div className="font-medium">{acc.name}</div>
-              <div className="text-sm text-muted-foreground/70">{acc.username}</div>
+              <div className="font-medium text-sm">{acc.name}</div>
+              <div className="text-xs text-muted-foreground/70">{acc.username}</div>
             </div>
           </div>
         ))}
@@ -574,7 +532,7 @@ function App() {
         <div
           onClick={() => setSelectedId("manual")}
           className={cn(
-            "flex items-center gap-3 p-4 rounded-2xl border border-dashed cursor-pointer transition-all duration-200",
+            "flex items-center gap-3 p-3 rounded-xl border border-dashed cursor-pointer transition-all duration-200",
             selectedId === "manual"
               ? "border-primary/40 bg-primary/8"
               : "border-border/50 hover:border-primary/30 hover:bg-muted/30"
@@ -586,12 +544,12 @@ function App() {
           )}>
             {selectedId === "manual" && <div className="w-2 h-2 rounded-full bg-primary" />}
           </div>
-          <span className="font-medium">{t("migrate.target.manual")}</span>
+          <span className="font-medium text-sm">{t("migrate.target.manual")}</span>
         </div>
       </div>
 
       {selectedId === "manual" && (
-        <div className="grid grid-cols-2 gap-3 p-4 rounded-2xl bg-muted/30 animate-fade-in">
+        <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-muted/30 animate-fade-in">
           <Input
             type="text"
             placeholder={t("migrate.manual.username")}
@@ -624,33 +582,33 @@ function App() {
     };
 
     return (
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="h-full flex flex-col max-w-4xl mx-auto">
         {(loading || localStep === "migrating") && renderLoading()}
 
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <Button variant="ghost" onClick={() => setPage("home")} className="-ml-3 mb-2 text-muted-foreground/70">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              {t("common.back")}
-            </Button>
-            <h1 className="text-2xl font-bold text-gradient">{t("migrate.local")}</h1>
-          </div>
+        <div className="shrink-0 flex items-center gap-3 mb-2">
+          <Button variant="ghost" size="sm" onClick={() => setPage("home")} className="-ml-2 text-muted-foreground/70">
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            {t("common.back")}
+          </Button>
+          <div className="h-5 w-px bg-border/40" />
+          <h1 className="text-xl font-bold text-gradient">{t("migrate.local")}</h1>
         </div>
 
+        <div className="flex-1 min-h-0">
         <Stepper
           currentStep={getLocalStepNumber()}
           steps={[t("migrate.step.list"), t("migrate.step.target"), t("migrate.step.result")]}
           disableStepIndicators
           showFooter={false}
           stepCircleContainerClassName="border-0 shadow-none bg-transparent"
-          stepContainerClassName="px-0 pb-6"
+          stepContainerClassName="px-0 pb-2"
         >
           {/* Step 1: Select Flows */}
           <Step>
-            <Card>
-              <CardContent className="p-4 space-y-3">
-                <h3 className="text-lg font-semibold">{t("migrate.step.list")}</h3>
-                <div className="flex items-center gap-4">
+            <Card className="h-full flex flex-col">
+              <CardContent className="p-4 flex flex-col flex-1 min-h-0 gap-3">
+                <div className="shrink-0 flex items-center gap-4">
+                  <h3 className="text-lg font-semibold">{t("migrate.step.list")}</h3>
                   <div className="relative flex-1">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
                     <Input
@@ -664,59 +622,56 @@ function App() {
                     {t("accounts.flow.selected").replace("{count}", String(selectedLocalIds.size))} / {filteredLocalFlows.length}
                   </span>
                 </div>
-                <div className="rounded-xl border border-border/30 overflow-hidden max-h-[200px] overflow-y-auto bg-muted/5">
+                <div ref={localListRef} className="flex-1 min-h-0 rounded-xl border border-border/30 overflow-hidden bg-muted/5">
                   {paginatedLocalFlows.length === 0 ? (
                     <div className="p-8 text-center text-muted-foreground/70">
                       {localSearch ? t("common.error") : t("common.loading")}
                     </div>
                   ) : (
-                    paginatedLocalFlows.map((flow) => {
-                      const realIdx = localFlows.indexOf(flow);
-                      return (
+                    paginatedLocalFlows.map((flow) => (
                         <div
-                          key={realIdx}
+                          key={flow.uuid}
                           onClick={() => {
                             const newSet = new Set(selectedLocalIds);
-                            if (newSet.has(realIdx)) newSet.delete(realIdx);
-                            else newSet.add(realIdx);
+                            if (newSet.has(flow.uuid)) newSet.delete(flow.uuid);
+                            else newSet.add(flow.uuid);
                             setSelectedLocalIds(newSet);
                           }}
                           className={cn(
-                            "flex items-center gap-3 p-3.5 border-b border-border/20 last:border-0 cursor-pointer transition-all duration-200",
-                            selectedLocalIds.has(realIdx) ? "bg-primary/6" : "hover:bg-muted/40"
+                            "flex items-center gap-3 p-3 border-b border-border/20 last:border-0 cursor-pointer transition-all duration-200",
+                            selectedLocalIds.has(flow.uuid) ? "bg-primary/6" : "hover:bg-muted/40"
                           )}
                         >
                           <div className={cn(
                             "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors",
-                            selectedLocalIds.has(realIdx) ? "bg-primary border-primary" : "border-muted-foreground/30"
+                            selectedLocalIds.has(flow.uuid) ? "bg-primary border-primary" : "border-muted-foreground/30"
                           )}>
-                            {selectedLocalIds.has(realIdx) && <Check className="h-3 w-3 text-primary-foreground" />}
+                            {selectedLocalIds.has(flow.uuid) && <Check className="h-3 w-3 text-primary-foreground" />}
                           </div>
                           <span className="flex-1 font-medium truncate">{flow.name}</span>
                           <span className="text-sm text-muted-foreground/50">{flow.update_time}</span>
                         </div>
-                      );
-                    })
+                    ))
                   )}
                 </div>
-                {renderPagination(localCurrentPage, localTotalPages, setLocalCurrentPage, localPageSize, setLocalPageSize)}
-                <div className="flex items-center justify-between pt-4 border-t border-border/20">
-                  <div className="flex gap-2">
+                <div className="shrink-0 flex items-center justify-between pt-2 border-t border-border/20">
+                  <div className="flex gap-2 items-center">
                     <Button variant="outline" size="sm" onClick={() => {
                       if (selectedLocalIds.size > 0) {
                         setSelectedLocalIds(new Set());
                       } else {
-                        setSelectedLocalIds(new Set(filteredLocalFlows.map(f => localFlows.indexOf(f))));
+                        setSelectedLocalIds(new Set(filteredLocalFlows.map(f => f.uuid)));
                       }
                     }}>
                       {selectedLocalIds.size > 0 ? t("common.deselect_all") : t("common.select_all")}
                     </Button>
                     {isAdmin && (
-                      <Button variant="destructive" size="sm" onClick={deleteLocalFlows} disabled={selectedLocalIds.size === 0}>
+                      <Button variant="destructive" size="sm" onClick={confirmDeleteLocalFlows} disabled={selectedLocalIds.size === 0}>
                         <Trash2 className="h-4 w-4 mr-1" />
                         {t("common.delete")}
                       </Button>
                     )}
+                    {renderPagination(localCurrentPage, localTotalPages, setLocalCurrentPage)}
                   </div>
                   <Button onClick={localNextToTarget} disabled={selectedLocalIds.size === 0}>
                     {t("common.confirm")}
@@ -738,7 +693,7 @@ function App() {
                 <div className="flex justify-between pt-3 border-t border-border/20">
                   <Button variant="outline" size="sm" onClick={() => setLocalStep("list")}>
                     <ArrowLeft className="h-4 w-4 mr-2" />
-                    {t("common.back")}
+                    {t("common.prev_step")}
                   </Button>
                   <Button
                     size="sm"
@@ -785,6 +740,7 @@ function App() {
             </Card>
           </Step>
         </Stepper>
+        </div>
       </div>
     );
   };
@@ -803,26 +759,26 @@ function App() {
     };
 
     return (
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="h-full flex flex-col max-w-4xl mx-auto">
         {(loading || cloudStep === "migrating") && renderLoading()}
 
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <Button variant="ghost" onClick={() => setPage("home")} className="-ml-3 mb-2 text-muted-foreground/70">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              {t("common.back")}
-            </Button>
-            <h1 className="text-2xl font-bold text-gradient">{t("migrate.cloud")}</h1>
-          </div>
+        <div className="shrink-0 flex items-center gap-3 mb-2">
+          <Button variant="ghost" size="sm" onClick={() => setPage("home")} className="-ml-2 text-muted-foreground/70">
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            {t("common.back")}
+          </Button>
+          <div className="h-5 w-px bg-border/40" />
+          <h1 className="text-xl font-bold text-gradient">{t("migrate.cloud")}</h1>
         </div>
 
+        <div className="flex-1 min-h-0">
         <Stepper
           currentStep={getCloudStepNumber()}
           steps={[t("migrate.step.source"), t("migrate.step.list"), t("migrate.step.target"), t("migrate.step.result")]}
           disableStepIndicators
           showFooter={false}
           stepCircleContainerClassName="border-0 shadow-none bg-transparent"
-          stepContainerClassName="px-0 pb-6"
+          stepContainerClassName="px-0 pb-2"
         >
           {/* Step 1: Select Source */}
           <Step>
@@ -844,10 +800,10 @@ function App() {
 
           {/* Step 2: Select Flows */}
           <Step>
-            <Card>
-              <CardContent className="p-4 space-y-3">
-                <h3 className="text-lg font-semibold">{t("migrate.step.list")}</h3>
-                <div className="flex items-center gap-4">
+            <Card className="h-full flex flex-col">
+              <CardContent className="p-4 flex flex-col flex-1 min-h-0 gap-3">
+                <div className="shrink-0 flex items-center gap-4">
+                  <h3 className="text-lg font-semibold">{t("migrate.step.list")}</h3>
                   <div className="relative flex-1">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
                     <Input
@@ -861,57 +817,54 @@ function App() {
                     {t("accounts.flow.selected").replace("{count}", String(selectedCloudIds.size))} / {filteredCloudFlows.length}
                   </span>
                 </div>
-                <div className="rounded-xl border border-border/30 overflow-hidden max-h-[200px] overflow-y-auto bg-muted/5">
+                <div ref={cloudListRef} className="flex-1 min-h-0 rounded-xl border border-border/30 overflow-hidden bg-muted/5">
                   {paginatedCloudFlows.length === 0 ? (
                     <div className="p-8 text-center text-muted-foreground/70">
                       {cloudSearch ? t("common.error") : t("common.loading")}
                     </div>
                   ) : (
-                    paginatedCloudFlows.map((flow) => {
-                      const realIdx = cloudFlows.indexOf(flow);
-                      return (
+                    paginatedCloudFlows.map((flow) => (
                         <div
-                          key={realIdx}
+                          key={flow.appId}
                           onClick={() => {
                             const newSet = new Set(selectedCloudIds);
-                            if (newSet.has(realIdx)) newSet.delete(realIdx);
-                            else newSet.add(realIdx);
+                            if (newSet.has(flow.appId)) newSet.delete(flow.appId);
+                            else newSet.add(flow.appId);
                             setSelectedCloudIds(newSet);
                           }}
                           className={cn(
-                            "flex items-center gap-3 p-3.5 border-b border-border/20 last:border-0 cursor-pointer transition-all duration-200",
-                            selectedCloudIds.has(realIdx) ? "bg-primary/6" : "hover:bg-muted/40"
+                            "flex items-center gap-3 p-3 border-b border-border/20 last:border-0 cursor-pointer transition-all duration-200",
+                            selectedCloudIds.has(flow.appId) ? "bg-primary/6" : "hover:bg-muted/40"
                           )}
                         >
                           <div className={cn(
                             "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors",
-                            selectedCloudIds.has(realIdx) ? "bg-primary border-primary" : "border-muted-foreground/30"
+                            selectedCloudIds.has(flow.appId) ? "bg-primary border-primary" : "border-muted-foreground/30"
                           )}>
-                            {selectedCloudIds.has(realIdx) && <Check className="h-3 w-3 text-primary-foreground" />}
+                            {selectedCloudIds.has(flow.appId) && <Check className="h-3 w-3 text-primary-foreground" />}
                           </div>
                           <span className="flex-1 font-medium truncate">{flow.appName}</span>
                           <span className="text-sm text-muted-foreground/50">{flow.updateTime?.substring(0, 19) || ""}</span>
                         </div>
-                      );
-                    })
+                    ))
                   )}
                 </div>
-                {renderPagination(cloudCurrentPage, cloudTotalPages, setCloudCurrentPage, cloudPageSize, setCloudPageSize)}
-                <div className="flex items-center justify-between pt-4 border-t border-border/20">
-                  <div className="flex gap-2">
+                <div className="shrink-0 flex items-center justify-between pt-2 border-t border-border/20">
+                  <Button variant="outline" size="sm" onClick={() => setCloudStep("source")}>
+                    <ArrowLeft className="h-4 w-4 mr-1" />
+                    {t("common.prev_step")}
+                  </Button>
+                  <div className="flex gap-2 items-center">
                     <Button variant="outline" size="sm" onClick={() => {
                       if (selectedCloudIds.size > 0) {
                         setSelectedCloudIds(new Set());
                       } else {
-                        setSelectedCloudIds(new Set(filteredCloudFlows.map(f => cloudFlows.indexOf(f))));
+                        setSelectedCloudIds(new Set(filteredCloudFlows.map(f => f.appId)));
                       }
                     }}>
                       {selectedCloudIds.size > 0 ? t("common.deselect_all") : t("common.select_all")}
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => setCloudStep("source")}>
-                      <ArrowLeft className="h-4 w-4 mr-1" />
-                      {t("common.back")}
-                    </Button>
+                    {renderPagination(cloudCurrentPage, cloudTotalPages, setCloudCurrentPage)}
                   </div>
                   <Button onClick={cloudNextToTarget} disabled={selectedCloudIds.size === 0}>
                     {t("common.confirm")}
@@ -933,7 +886,7 @@ function App() {
                 <div className="flex justify-between pt-3 border-t border-border/20">
                   <Button variant="outline" size="sm" onClick={() => setCloudStep("list")}>
                     <ArrowLeft className="h-4 w-4 mr-2" />
-                    {t("common.back")}
+                    {t("common.prev_step")}
                   </Button>
                   <Button
                     size="sm"
@@ -952,7 +905,7 @@ function App() {
             <Card>
               <CardContent className="p-4 space-y-3">
                 <h3 className="text-lg font-semibold text-center">{t("migrate.step.result")}</h3>
-                <div className="max-h-[220px] overflow-y-auto space-y-1.5">
+                <div className="space-y-1.5">
                   {results.map((r, idx) => (
                     <div
                       key={idx}
@@ -980,6 +933,7 @@ function App() {
             </Card>
           </Step>
         </Stepper>
+        </div>
       </div>
     );
   };
@@ -995,7 +949,6 @@ function App() {
       onSignOut={signOut}
       username={username}
       isAdmin={isAdmin}
-      language={settings.language}
     >
       {page === "home" && <HomePage accountsCount={accounts.length} onNavigate={setPage} />}
       {page === "migrate" && <MigratePage onNavigate={setPage} onStartLocal={startLocalMigration} onStartCloud={startCloudMigration} />}
@@ -1051,6 +1004,25 @@ function App() {
         }}
         onUpdatePassword={updateAccountPassword}
       />
+
+      {/* 删除流程确认弹窗 */}
+      <AlertDialog open={deleteFlowsConfirmOpen} onOpenChange={setDeleteFlowsConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("accounts.delete.flows.confirm").replace("{count}", String(selectedLocalIds.size))}</AlertDialogTitle>
+            <AlertDialogDescription>{t("accounts.delete.flows.desc")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={executeDeleteLocalFlows}
+            >
+              {t("common.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Toast 通知 */}
       <Toaster position="top-center" richColors />

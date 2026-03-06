@@ -1,6 +1,6 @@
 //! 云端流程操作模块
 use serde::{Deserialize, Serialize};
-use crate::api::client::create_client;
+use crate::api::client::{get_client, with_auth, with_common_headers};
 
 const BASE_URL: &str = "https://api.winrobot360.com";
 
@@ -49,7 +49,7 @@ pub struct UploadInfo {
 
 /// 获取云端流程列表（支持分页）
 pub async fn get_cloud_flow_list(token: &str) -> Result<Vec<CloudFlow>, String> {
-    let client = create_client()?;
+    let client = get_client();
     let mut all_flows = Vec::new();
     let mut page = 1u32;
     let page_size = 30u32;
@@ -64,14 +64,10 @@ pub async fn get_cloud_flow_list(token: &str) -> Result<Vec<CloudFlow>, String> 
             "sortBy": "4"
         });
         
-        let response = client
-            .post(format!("{}/api/client/app/develop/list", BASE_URL))
-            .header("Connection", "Keep-Alive")
-            .header("Content-Type", "application/json; charset=utf-8")
-            .header("Accept", "*/*")
-            .header("Accept-Language", "zh-cn")
-            .header("Authorization", format!("bearer {}", token))
-            .header("User-Agent", "Mozilla/4.0 (compatible; MSIE 9.0; Windows NT 6.1)")
+        let response = with_auth(
+            client.post(format!("{}/api/client/app/develop/list", BASE_URL)),
+            token,
+        )
             .json(&payload)
             .send()
             .await
@@ -100,12 +96,12 @@ pub async fn get_cloud_flow_list(token: &str) -> Result<Vec<CloudFlow>, String> 
 
 /// 获取应用详情
 pub async fn get_app_detail(token: &str, app_id: &str) -> Result<AppDetail, String> {
-    let client = create_client()?;
+    let client = get_client();
     
-    let response = client
-        .get(format!("{}/api/client/app/develop/app/detail", BASE_URL))
-        .header("Authorization", format!("bearer {}", token))
-        .header("User-Agent", "Mozilla/4.0 (compatible; MSIE 9.0; Windows NT 6.1)")
+    let response = with_auth(
+        client.get(format!("{}/api/client/app/develop/app/detail", BASE_URL)),
+        token,
+    )
         .query(&[("appId", app_id), ("checkAppRecycle", "True")])
         .send()
         .await
@@ -127,11 +123,9 @@ pub async fn get_app_detail(token: &str, app_id: &str) -> Result<AppDetail, Stri
 
 /// 下载 package.bot 文件
 pub async fn download_package_bot(url: &str) -> Result<Vec<u8>, String> {
-    let client = create_client()?;
+    let client = get_client();
     
-    let response = client
-        .get(url)
-        .header("User-Agent", "Mozilla/4.0 (compatible; MSIE 9.0; Windows NT 6.1)")
+    let response = with_common_headers(client.get(url))
         .send()
         .await
         .map_err(|e| format!("下载失败: {}", e))?;
@@ -147,7 +141,7 @@ pub async fn download_package_bot(url: &str) -> Result<Vec<u8>, String> {
 
 /// 获取上传地址
 pub async fn get_upload_url(token: &str, app_id: &str, is_bot: bool) -> Result<UploadInfo, String> {
-    let client = create_client()?;
+    let client = get_client();
     
     let payload = serde_json::json!({
         "appId": app_id,
@@ -156,11 +150,10 @@ pub async fn get_upload_url(token: &str, app_id: &str, is_bot: bool) -> Result<U
         "isBot": if is_bot { "true" } else { "false" }
     });
     
-    let response = client
-        .post(format!("{}/api/client/app/file/assignUploadUrl", BASE_URL))
-        .header("Authorization", format!("bearer {}", token))
-        .header("Content-Type", "application/json; charset=utf-8")
-        .header("User-Agent", "Mozilla/4.0 (compatible; MSIE 9.0; Windows NT 6.1)")
+    let response = with_auth(
+        client.post(format!("{}/api/client/app/file/assignUploadUrl", BASE_URL)),
+        token,
+    )
         .json(&payload)
         .send()
         .await
@@ -181,14 +174,9 @@ pub async fn get_upload_url(token: &str, app_id: &str, is_bot: bool) -> Result<U
 
 /// 上传文件到 OSS
 pub async fn upload_to_oss(url: &str, data: Vec<u8>) -> Result<(), String> {
-    let client = create_client()?;
+    let client = get_client();
     
-    let response = client
-        .put(url)
-        .header("Connection", "Keep-Alive")
-        .header("Accept", "*/*")
-        .header("Accept-Language", "zh-cn")
-        .header("User-Agent", "Mozilla/4.0 (compatible; MSIE 9.0; Windows NT 6.1)")
+    let response = with_common_headers(client.put(url))
         .body(data)
         .send()
         .await
@@ -208,7 +196,7 @@ pub async fn create_app(
     package_data: &serde_json::Value,
     package_md5: &str,
 ) -> Result<(), String> {
-    let client = create_client()?;
+    let client = get_client();
     
     let payload = serde_json::json!({
         "appId": app_id,
@@ -249,11 +237,10 @@ pub async fn create_app(
         "packageMd5": package_md5
     });
     
-    let response = client
-        .post(format!("{}/api/client/app/develop/create", BASE_URL))
-        .header("Authorization", format!("bearer {}", token))
-        .header("Content-Type", "application/json; charset=utf-8")
-        .header("User-Agent", "Mozilla/4.0 (compatible; MSIE 9.0; Windows NT 6.1)")
+    let response = with_auth(
+        client.post(format!("{}/api/client/app/develop/create", BASE_URL)),
+        token,
+    )
         .json(&payload)
         .send()
         .await
@@ -279,26 +266,21 @@ pub async fn create_app(
 
 /// 删除云端流程（移入回收站）
 pub async fn delete_cloud_flow(token: &str, app_id: &str) -> Result<(), String> {
-    let client = create_client()?;
+    let client = get_client();
     
     let payload = serde_json::json!({
         "appId": app_id
     });
     
-    let response = client
-        .post(format!("{}/api/client/recycle/recycle", BASE_URL))
-        .header("Connection", "Keep-Alive")
-        .header("Content-Type", "application/json; charset=utf-8")
-        .header("Accept", "*/*")
-        .header("Accept-Language", "zh-cn")
-        .header("Authorization", format!("bearer {}", token))
-        .header("User-Agent", "Mozilla/4.0 (compatible; MSIE 9.0; Windows NT 6.1)")
+    let response = with_auth(
+        client.post(format!("{}/api/client/recycle/recycle", BASE_URL)),
+        token,
+    )
         .json(&payload)
         .send()
         .await
         .map_err(|e| format!("请求失败: {}", e))?;
     
-    // 检查 token 是否过期
     if response.status().as_u16() == 401 {
         return Err("TOKEN_EXPIRED".to_string());
     }
@@ -320,4 +302,3 @@ pub async fn delete_cloud_flow(token: &str, app_id: &str) -> Result<(), String> 
         Err("删除流程失败".to_string())
     }
 }
-

@@ -15,7 +15,6 @@ export const signInWithUsername = async (username: string, password: string) => 
         .eq('username', username)
         .maybeSingle()
 
-    console.log('查询结果:', { profile, profileError, username })
 
     if (profileError) {
         console.error('查询失败:', profileError)
@@ -113,10 +112,27 @@ export const updateLastLogin = async (userId: string) => {
     }
 }
 
-// 追加操作日志
-export const appendOperationLog = async (userId: string, action: string) => {
+// 操作类型枚举
+export type ActionType = 'add_account' | 'edit_account' | 'delete_account' | 'migrate_local' | 'migrate_cloud' | 'delete_flow'
+
+// 追加操作日志（同时写入 profiles.operation_log 和 yingdaotools_operation_logs 表）
+export const appendOperationLog = async (userId: string, logUsername: string, actionType: ActionType, detail: string) => {
     try {
-        // 先获取当前日志
+        // 1. 写入新的独立日志表
+        const { error: insertError } = await supabase
+            .from('yingdaotools_operation_logs')
+            .insert({
+                user_id: userId,
+                username: logUsername,
+                action: actionType,
+                detail,
+            })
+
+        if (insertError) {
+            console.error('写入操作日志表失败:', insertError.message)
+        }
+
+        // 2. 保留旧逻辑：追加到 profiles.operation_log
         const { data: profile, error: fetchError } = await supabase
             .from('profiles')
             .select('operation_log')
@@ -124,13 +140,12 @@ export const appendOperationLog = async (userId: string, action: string) => {
             .single()
 
         if (fetchError) {
-            console.error('获取操作日志失败:', fetchError.message, fetchError.details, fetchError.hint)
+            console.error('获取操作日志失败:', fetchError.message)
             return
         }
 
-        // 追加新日志
         const timestamp = formatBeijingTime()
-        const newLog = `${timestamp}，${action}`
+        const newLog = `${timestamp}，${detail}`
         const currentLog = profile?.operation_log || ''
         const updatedLog = currentLog ? `${currentLog}\n${newLog}` : newLog
 
@@ -140,13 +155,56 @@ export const appendOperationLog = async (userId: string, action: string) => {
             .eq('id', userId)
 
         if (updateError) {
-            console.error('更新操作日志失败:', updateError.message, updateError.details, updateError.hint)
-        } else {
-            console.log('操作日志已记录:', newLog)
+            console.error('更新操作日志失败:', updateError.message)
         }
     } catch (e) {
         console.error('操作日志异常:', e)
     }
+}
+
+// 操作日志记录类型
+export interface OperationLogEntry {
+    id: string
+    user_id: string
+    username: string
+    action: ActionType
+    detail: string
+    created_at: string
+}
+
+// 查询操作日志（分页 + 筛选，仅管理员可调用，RLS 已在数据库层控制）
+export const fetchOperationLogs = async (params: {
+    page: number
+    pageSize: number
+    action?: string
+    username?: string
+}): Promise<{ data: OperationLogEntry[]; total: number }> => {
+    const { page, pageSize, action, username } = params
+    const from = (page - 1) * pageSize
+    const to = from + pageSize - 1
+
+    let query = supabase
+        .from('yingdaotools_operation_logs')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+
+    if (action && action !== 'all') {
+        query = query.eq('action', action)
+    }
+    if (username && username.trim()) {
+        query = query.ilike('username', `%${username.trim()}%`)
+    }
+
+    query = query.range(from, to)
+
+    const { data, count, error } = await query
+
+    if (error) {
+        console.error('查询操作日志失败:', error.message)
+        return { data: [], total: 0 }
+    }
+
+    return { data: data || [], total: count || 0 }
 }
 
 // 检查并同步封禁状态（方案A：登录时检查）

@@ -130,14 +130,23 @@ fn create_package_bot_from_local(robot_path: &str, package_data: &serde_json::Va
     Ok(output)
 }
 
+/// 根据模板生成迁移后的流程名称
+fn apply_suffix_template(template: &str, original_name: &str) -> String {
+    let now = Local::now();
+    template
+        .replace("{name}", original_name)
+        .replace("{datetime}", &now.format("%Y年%m月%d日 %H时%M分%S秒").to_string())
+        .replace("{date}", &now.format("%Y-%m-%d").to_string())
+        .replace("{time}", &now.format("%H:%M:%S").to_string())
+}
+
 /// 迁移本地流程到目标账号
-pub async fn migrate_local_flow(flow: &LocalFlow, target_token: &str) -> Result<String, String> {
+pub async fn migrate_local_flow(flow: &LocalFlow, target_token: &str, suffix_template: &str) -> Result<String, String> {
     // 1. 生成新的 APP ID
     let new_app_id = Uuid::new_v4().to_string();
     
     // 2. 准备新的 package_data
-    let timestamp = Local::now().format("%Y年%m月%d日 %H时%M分%S秒").to_string();
-    let new_name = format!("{}_云迁_接收于{}", flow.name, timestamp);
+    let new_name = apply_suffix_template(suffix_template, &flow.name);
     
     let mut package_data = flow.package_data.clone();
     if let Some(obj) = package_data.as_object_mut() {
@@ -170,6 +179,7 @@ pub async fn migrate_cloud_flow(
     flow: &CloudFlow,
     source_token: &str,
     target_token: &str,
+    suffix_template: &str,
 ) -> Result<String, String> {
     // 1. 获取源应用详情
     let detail = cloud::get_app_detail(source_token, &flow.app_id).await?;
@@ -187,8 +197,7 @@ pub async fn migrate_cloud_flow(
     let mut package_data = extract_package_json(&bot_data)?;
     
     let new_app_id = Uuid::new_v4().to_string();
-    let timestamp = Local::now().format("%Y年%m月%d日 %H时%M分%S秒").to_string();
-    let new_name = format!("{}_云迁_接收于{}", flow.app_name, timestamp);
+    let new_name = apply_suffix_template(suffix_template, &flow.app_name);
     
     if let Some(obj) = package_data.as_object_mut() {
         obj.insert("uuid".to_string(), serde_json::json!(new_app_id));

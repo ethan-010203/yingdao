@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "@/components/ui/toaster";
+import { t } from "@/lib/i18n";
 
 // Define generic types matching Rust structs
 export interface Account {
@@ -14,6 +15,7 @@ export interface Settings {
     language: string;
     theme: string;
     auto_update: boolean;
+    migrate_suffix: string;
 }
 
 // Config shape matches Rust backend: { accounts: AccountConfig[], settings: Settings }
@@ -26,10 +28,13 @@ interface ConfigContextType {
     reloadConfig: () => Promise<void>;
 }
 
+const DEFAULT_MIGRATE_SUFFIX = "{name}_云迁_接收于{datetime}";
+
 const defaultSettings: Settings = {
     language: "zh-CN",
     theme: "system",
     auto_update: true,
+    migrate_suffix: DEFAULT_MIGRATE_SUFFIX,
 };
 
 const ConfigContext = createContext<ConfigContextType | undefined>(undefined);
@@ -78,7 +83,8 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
                 setSettings({
                     language: config.settings.language || "zh-CN",
                     theme: config.settings.theme || "system",
-                    auto_update: config.settings.auto_update !== undefined ? config.settings.auto_update : true
+                    auto_update: config.settings.auto_update !== undefined ? config.settings.auto_update : true,
+                    migrate_suffix: config.settings.migrate_suffix || DEFAULT_MIGRATE_SUFFIX,
                 });
             }
 
@@ -87,13 +93,14 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
                 const settingsToSave = config.settings ? {
                     language: config.settings.language || "zh-CN",
                     theme: config.settings.theme || "system",
-                    auto_update: config.settings.auto_update !== undefined ? config.settings.auto_update : true
+                    auto_update: config.settings.auto_update !== undefined ? config.settings.auto_update : true,
+                    migrate_suffix: config.settings.migrate_suffix || DEFAULT_MIGRATE_SUFFIX,
                 } : defaultSettings;
                 await saveConfigToBackend(loadedAccounts, settingsToSave);
             }
         } catch (e) {
             console.error("Failed to load config:", e);
-            toast.error("加载配置失败");
+            toast.error(t("config.load_failed", settings.language));
         }
     };
 
@@ -120,23 +127,25 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
     };
 
     const updateSettings = async (newSettings: Partial<Settings>) => {
+        const previous = settings;
         const updated = { ...settings, ...newSettings };
         setSettings(updated);
         try {
             await saveConfigToBackend(accounts, updated);
-            // toast.success("设置已更新");
         } catch (e) {
-            toast.error("保存设置失败");
-            // revert?
+            setSettings(previous);
+            toast.error(t("config.save_settings_failed", previous.language));
         }
     };
 
     const saveAccounts = async (newAccounts: Account[]) => {
+        const previous = accounts;
         setAccountsState(newAccounts);
         try {
             await saveConfigToBackend(newAccounts, settings);
         } catch (e) {
-            toast.error("保存账号失败");
+            setAccountsState(previous);
+            toast.error(t("config.save_accounts_failed", settings.language));
         }
     };
 
