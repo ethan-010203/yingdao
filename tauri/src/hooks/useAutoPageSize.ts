@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, RefObject } from "react";
+import { useState, useLayoutEffect, useCallback, RefObject } from "react";
 
 /**
  * Dynamically calculates how many rows fit in the available container height.
@@ -19,18 +19,24 @@ export function useAutoPageSize(
         if (!containerRef.current) return;
         const available = containerRef.current.clientHeight;
         const rows = Math.max(minRows, Math.floor(available / rowHeight));
-        setPageSize(rows);
+        setPageSize(prev => prev === rows ? prev : rows);
     }, [containerRef, rowHeight, minRows]);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         calculate();
 
+        const rafId = window.requestAnimationFrame(calculate);
         const el = containerRef.current;
-        if (!el) return;
+        if (!el) {
+            return () => window.cancelAnimationFrame(rafId);
+        }
 
         const observer = new ResizeObserver(() => calculate());
         observer.observe(el);
-        return () => observer.disconnect();
+        return () => {
+            observer.disconnect();
+            window.cancelAnimationFrame(rafId);
+        };
     }, [calculate, containerRef]);
 
     return pageSize;

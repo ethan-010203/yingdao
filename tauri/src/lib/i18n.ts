@@ -1,3 +1,4 @@
+import * as React from "react";
 import { useConfig } from "@/contexts/ConfigContext";
 
 const translations: Record<string, Record<string, string>> = {
@@ -333,9 +334,9 @@ export function useTranslation() {
     const { settings } = useConfig();
     const language = (settings.language as Language) || "zh-CN";
 
-    const translate = (key: string) => {
+    const translate = React.useCallback((key: string) => {
         return t(key, language);
-    };
+    }, [language]);
 
     return { t: translate, language };
 }

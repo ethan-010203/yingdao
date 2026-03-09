@@ -14,7 +14,6 @@ import { getVersion } from "@tauri-apps/api/app"
 import { listen } from "@tauri-apps/api/event"
 import { toast } from "@/components/ui/toaster"
 import { fetchOperationLogs, type OperationLogEntry, type ActionType } from "@/lib/supabase"
-import { useAutoPageSize } from "@/hooks/useAutoPageSize"
 import type { UpdateInfo, DownloadProgressPayload } from "@/types"
 
 const ACTION_TYPES: ActionType[] = [
@@ -43,35 +42,76 @@ export function SettingsPage() {
     const [logsLoading, setLogsLoading] = React.useState(false)
     const [filterAction, setFilterAction] = React.useState("all")
     const [filterUser, setFilterUser] = React.useState("")
+    const [logsPageSize, setLogsPageSize] = React.useState(3)
     const logsTableRef = React.useRef<HTMLDivElement>(null)
-    const logsPageSize = useAutoPageSize(logsTableRef, LOGS_ROW_HEIGHT)
 
     React.useEffect(() => {
         getVersion().then(v => setAppVersion(v)).catch(() => setAppVersion("1.2.0"))
     }, [])
 
-    const loadLogs = React.useCallback(async () => {
-        setLogsLoading(true)
-        try {
-            const result = await fetchOperationLogs({
-                page: logsPage,
-                pageSize: logsPageSize,
-                action: filterAction !== "all" ? filterAction : undefined,
-                username: filterUser || undefined,
+    React.useLayoutEffect(() => {
+        if (activeTab !== "logs" || !isAdmin) return
+
+        let frameId = 0
+        const tableEl = logsTableRef.current
+        if (!tableEl) return
+
+        const calculateLogsPageSize = () => {
+            const nextPageSize = Math.max(3, Math.floor(tableEl.clientHeight / LOGS_ROW_HEIGHT))
+            setLogsPageSize(prev => {
+                if (prev === nextPageSize) return prev
+                window.requestAnimationFrame(() => setLogsPage(1))
+                return nextPageSize
             })
-            setLogs(result.data)
-            setLogsTotal(result.total)
-        } catch {
-            toast.error(t("common.error"))
-        } finally {
-            setLogsLoading(false)
         }
-    }, [logsPage, logsPageSize, filterAction, filterUser, t])
+
+        calculateLogsPageSize()
+        frameId = window.requestAnimationFrame(calculateLogsPageSize)
+
+        const observer = new ResizeObserver(calculateLogsPageSize)
+        observer.observe(tableEl)
+
+        return () => {
+            observer.disconnect()
+            window.cancelAnimationFrame(frameId)
+        }
+    }, [activeTab, isAdmin])
 
     React.useEffect(() => {
         if (activeTab !== "logs" || !isAdmin || logsPageSize < 1) return
+
+        let cancelled = false
+
+        const loadLogs = async () => {
+            setLogsLoading(true)
+            try {
+                const result = await fetchOperationLogs({
+                    page: logsPage,
+                    pageSize: logsPageSize,
+                    action: filterAction !== "all" ? filterAction : undefined,
+                    username: filterUser || undefined,
+                })
+
+                if (cancelled) return
+                setLogs(result.data)
+                setLogsTotal(result.total)
+            } catch {
+                if (!cancelled) {
+                    toast.error(t("common.error"))
+                }
+            } finally {
+                if (!cancelled) {
+                    setLogsLoading(false)
+                }
+            }
+        }
+
         loadLogs()
-    }, [activeTab, isAdmin, logsPageSize, loadLogs])
+
+        return () => {
+            cancelled = true
+        }
+    }, [activeTab, isAdmin, logsPage, logsPageSize, filterAction, filterUser, t])
 
     const logsTotalPages = Math.max(1, Math.ceil(logsTotal / logsPageSize))
 
