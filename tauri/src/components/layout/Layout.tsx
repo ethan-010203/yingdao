@@ -5,22 +5,12 @@ import {
     FolderSync,
     Users,
     Settings,
-    LogOut,
     Sun,
     Moon,
-    User
 } from "lucide-react"
 import { useTranslation } from "@/lib/i18n"
 import { Button } from "@/components/ui/button"
 import Galaxy from "@/components/ui/Galaxy"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 
 import type { Theme, Page } from "@/types"
 
@@ -42,9 +32,6 @@ export function Layout({
     onNavigate,
     theme,
     onThemeChange,
-    onSignOut,
-    username,
-    isAdmin = false,
 }: LayoutProps) {
     const { t } = useTranslation()
     const isPageActive = (navId: Page) => {
@@ -119,32 +106,6 @@ export function Layout({
                     >
                         {theme === "light" ? <Sun size={18} /> : <Moon size={18} />}
                     </Button>
-
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="pl-1 pr-3 py-1 h-10 rounded-full bg-background/50 backdrop-blur-md border-border/40 shadow-sm gap-2">
-                                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold">
-                                    {username?.charAt(0).toUpperCase() || <User size={14} />}
-                                </div>
-                                <span className="text-sm font-medium">{username || t("sidebar.user")}</span>
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56">
-                            <DropdownMenuLabel>
-                                <div className="flex flex-col space-y-1">
-                                    <p className="text-sm font-medium leading-none">{username}</p>
-                                    <p className="text-xs leading-none text-muted-foreground">
-                                        {isAdmin ? t("sidebar.admin") : t("sidebar.user")}
-                                    </p>
-                                </div>
-                            </DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={onSignOut} className="text-destructive focus:text-destructive">
-                                <LogOut className="mr-2 h-4 w-4" />
-                                <span>{t("sidebar.logout")}</span>
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
                 </div>
             </header>
 
