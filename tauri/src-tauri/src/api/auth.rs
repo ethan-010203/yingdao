@@ -1,7 +1,9 @@
 //! RSA 加密和认证模块
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use rsa::{RsaPublicKey, pkcs8::DecodePublicKey, Pkcs1v15Encrypt};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+
+use crate::api::client::get_client;
 
 /// RSA 公钥 (从 xbot 软件提取)
 const RSA_PUBLIC_KEY_PEM: &str = r#"-----BEGIN PUBLIC KEY-----
@@ -35,11 +37,9 @@ pub struct LoginResponse {
 /// 登录账号并获取 access_token
 pub async fn login(username: &str, password: &str) -> Result<String, String> {
     let encrypted_password = encrypt_password(password)?;
-    
-    let client = reqwest::Client::builder()
-        .build()
-        .map_err(|e| format!("创建HTTP客户端失败: {}", e))?;
-    
+
+    let client = get_client();
+
     let params = [
         ("username", username),
         ("password", &encrypted_password),

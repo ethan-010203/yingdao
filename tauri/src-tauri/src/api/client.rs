@@ -1,17 +1,31 @@
 //! HTTP 客户端工具
 use reqwest::{Client, RequestBuilder};
 use std::sync::OnceLock;
+use std::time::Duration;
 
 static SHARED_CLIENT: OnceLock<Client> = OnceLock::new();
+static UPDATER_CLIENT: OnceLock<Client> = OnceLock::new();
 
-/// 获取共享的 HTTP 客户端（单例，复用连接池）
+/// 获取共享的 HTTP 客户端（用于影刀 API 等业务请求，30s 超时）
 pub fn get_client() -> &'static Client {
     SHARED_CLIENT.get_or_init(|| {
         Client::builder()
             .danger_accept_invalid_certs(true)
-            .timeout(std::time::Duration::from_secs(30))
+            .timeout(Duration::from_secs(30))
             .build()
             .expect("创建HTTP客户端失败")
+    })
+}
+
+/// 获取共享的更新检查 / 下载客户端（GitHub API & Release 资源，长超时 + 多重定向）
+pub fn get_updater_client() -> &'static Client {
+    UPDATER_CLIENT.get_or_init(|| {
+        Client::builder()
+            .user_agent("yingdao-updater")
+            .redirect(reqwest::redirect::Policy::limited(10))
+            .timeout(Duration::from_secs(300))
+            .build()
+            .expect("创建更新客户端失败")
     })
 }
 

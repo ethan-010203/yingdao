@@ -10,9 +10,10 @@ import {
 } from "lucide-react"
 import { useTranslation } from "@/lib/i18n"
 import { Button } from "@/components/ui/button"
-import Galaxy from "@/components/ui/Galaxy"
 
 import type { Theme, Page } from "@/types"
+
+const Galaxy = React.lazy(() => import("@/components/ui/Galaxy"))
 
 interface LayoutProps {
     children: React.ReactNode
@@ -78,20 +79,22 @@ export function Layout({
             {/* 背景装饰 */}
             <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none opacity-50 dark:opacity-80">
                 {theme === "dark" && (
-                    <Galaxy
-                        density={1}
-                        glowIntensity={0.3}
-                        saturation={0}
-                        hueShift={140}
-                        twinkleIntensity={0.3}
-                        rotationSpeed={0.1}
-                        repulsionStrength={2}
-                        autoCenterRepulsion={0}
-                        starSpeed={0.5}
-                        speed={1}
-                        mouseInteraction={true}
-                        mouseRepulsion={true}
-                    />
+                    <React.Suspense fallback={null}>
+                        <Galaxy
+                            density={1}
+                            glowIntensity={0.3}
+                            saturation={0}
+                            hueShift={140}
+                            twinkleIntensity={0.3}
+                            rotationSpeed={0.1}
+                            repulsionStrength={2}
+                            autoCenterRepulsion={0}
+                            starSpeed={0.5}
+                            speed={1}
+                            mouseInteraction={true}
+                            mouseRepulsion={true}
+                        />
+                    </React.Suspense>
                 )}
             </div>
 

@@ -1,8 +1,10 @@
 mod api;
 mod flow;
 mod commands;
+mod updater;
 
 use commands::*;
+use updater::{check_for_update, download_update, open_file_and_exit};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {

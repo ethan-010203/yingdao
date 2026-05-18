@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef, lazy, Suspense } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Layout } from "@/components/layout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,7 +18,6 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
-import { SettingsPage } from "@/components/SettingsPage";
 import { useConfig, Account } from "@/contexts/ConfigContext";
 import { useTranslation } from "@/lib/i18n";
 import { useAutoPageSize } from "@/hooks/useAutoPageSize";
@@ -33,7 +32,12 @@ import {
 } from "lucide-react";
 import Stepper, { Step } from "@/components/ui/Stepper";
 import { listen } from "@tauri-apps/api/event";
-import type { LocalFlow, CloudFlow, MigrateResult, UpdateInfo, DownloadProgressPayload, Theme, Page } from "@/types";
+import type { LocalFlow, CloudFlow, MigrateResult, UpdateInfo, DownloadProgressPayload, MigrateProgressPayload, Theme, Page } from "@/types";
+
+// 设置页较重（Supabase 客户端、Galaxy 等），仅当用户切换到该页时再加载
+const SettingsPage = lazy(() =>
+  import("@/components/SettingsPage").then(m => ({ default: m.SettingsPage }))
+);
 
 type LocalStep = "list" | "target" | "migrating" | "result";
 type CloudStep = "source" | "list" | "target" | "migrating" | "result";
@@ -265,7 +269,7 @@ function App() {
 
   const localNextToTarget = () => {
     if (selectedLocalIds.size === 0) {
-      toast.error(t("common.error"));
+      toast.error(t("migrate.no_selection"));
       return;
     }
     setLocalStep("target");
@@ -291,6 +295,16 @@ function App() {
 
     setLocalStep("migrating");
     setLoadingText(t("migrate.logging_in_target"));
+
+    const unlistenProgress = await listen<MigrateProgressPayload>("migrate-progress", (event) => {
+      const { current, total, name } = event.payload;
+      setLoadingText(
+        t("migrate.progress")
+          .replace("{current}", String(current))
+          .replace("{total}", String(total))
+          .replace("{name}", name)
+      );
+    });
 
     try {
       const token: string = await invoke("login_account", {
@@ -321,6 +335,8 @@ function App() {
     } catch (e) {
       toast.error(`${t("common.error")}: ${e}`);
       setLocalStep("target");
+    } finally {
+      unlistenProgress();
     }
     setLoadingText("");
   };
@@ -377,7 +393,7 @@ function App() {
 
   const cloudNextToTarget = () => {
     if (selectedCloudIds.size === 0) {
-      toast.error(t("common.error"));
+      toast.error(t("migrate.no_selection"));
       return;
     }
     setCloudStep("target");
@@ -395,6 +411,16 @@ function App() {
 
     setCloudStep("migrating");
     setLoadingText(t("migrate.logging_in_target"));
+
+    const unlistenProgress = await listen<MigrateProgressPayload>("migrate-progress", (event) => {
+      const { current, total, name } = event.payload;
+      setLoadingText(
+        t("migrate.progress")
+          .replace("{current}", String(current))
+          .replace("{total}", String(total))
+          .replace("{name}", name)
+      );
+    });
 
     try {
       const token: string = await invoke("login_account", {
@@ -426,6 +452,8 @@ function App() {
     } catch (e) {
       toast.error(`${t("common.error")}: ${e}`);
       setCloudStep("target");
+    } finally {
+      unlistenProgress();
     }
     setLoadingText("");
   };
@@ -625,7 +653,7 @@ function App() {
                 <div ref={localListRef} className="flex-1 min-h-0 rounded-xl border border-border/30 overflow-hidden bg-muted/5">
                   {paginatedLocalFlows.length === 0 ? (
                     <div className="p-8 text-center text-muted-foreground/70">
-                      {localSearch ? t("common.error") : t("common.loading")}
+                      {localSearch ? t("migrate.search.empty") : t("migrate.empty")}
                     </div>
                   ) : (
                     paginatedLocalFlows.map((flow) => (
@@ -820,7 +848,7 @@ function App() {
                 <div ref={cloudListRef} className="flex-1 min-h-0 rounded-xl border border-border/30 overflow-hidden bg-muted/5">
                   {paginatedCloudFlows.length === 0 ? (
                     <div className="p-8 text-center text-muted-foreground/70">
-                      {cloudSearch ? t("common.error") : t("common.loading")}
+                      {cloudSearch ? t("migrate.search.empty") : t("migrate.empty")}
                     </div>
                   ) : (
                     paginatedCloudFlows.map((flow) => (
@@ -967,7 +995,13 @@ function App() {
       {page === "cloud" && renderCloudMigration()}
       {page === "settings" && (
         <div className="h-full animate-in fade-in zoom-in-95 duration-300">
-          <SettingsPage />
+          <Suspense fallback={
+            <div className="h-full flex items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          }>
+            <SettingsPage />
+          </Suspense>
         </div>
       )}
 

@@ -2,8 +2,9 @@ import { createContext, useContext, useState, useEffect, ReactNode } from "react
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "@/components/ui/toaster";
 import { t } from "@/lib/i18n";
+import type { BackendConfig, BackendSettings } from "@/types";
 
-// Define generic types matching Rust structs
+// 前端 Account 与后端 BackendAccount 字段一致；保留独立类型方便未来扩展（如脱敏标记）
 export interface Account {
     id: string;
     name: string;
@@ -11,12 +12,7 @@ export interface Account {
     password: string;
 }
 
-export interface Settings {
-    language: string;
-    theme: string;
-    auto_update: boolean;
-    migrate_suffix: string;
-}
+export type Settings = BackendSettings;
 
 // Config shape matches Rust backend: { accounts: AccountConfig[], settings: Settings }
 
@@ -62,12 +58,12 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
 
     const reloadConfig = async () => {
         try {
-            const config: { accounts: any[], settings?: any } = await invoke("load_config");
+            const config: BackendConfig = await invoke("load_config");
 
             // Use persisted ID from backend if available; generate only for legacy accounts missing an ID
             let needsSave = false;
-            const loadedAccounts = config.accounts.map((a: any, idx: number) => {
-                const hasId = a.id && a.id.trim() !== "";
+            const loadedAccounts: Account[] = config.accounts.map((a, idx) => {
+                const hasId = !!(a.id && a.id.trim() !== "");
                 if (!hasId) needsSave = true;
                 return {
                     id: hasId ? a.id : `acc_${Date.now()}_${idx}`,
