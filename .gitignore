@@ -9,8 +9,10 @@ dist-ssr/
 *.local
 
 # Rust / Tauri
-tauri/src-tauri/target/
-tauri/src-tauri/Cargo.lock.backup
+desktop/src-tauri/target/
+web/backend/target/
+web/backend/data/
+desktop/src-tauri/Cargo.lock.backup
 *.pdb
 
 # Python
@@ -23,6 +25,9 @@ env/
 venv/
 .env/
 .venv/
+.env
+.env.*
+!.env.example
 pip-log.txt
 pip-delete-this-directory.txt
 
@@ -51,3 +56,9 @@ Thumbs.db
 *.jpeg
 *.gif
 *.ico
+
+# Local reference material (may contain account or API data)
+app_list.json
+备份/
+请求/
+提示词/

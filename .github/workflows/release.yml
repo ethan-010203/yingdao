@@ -24,7 +24,7 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
-          cache-dependency-path: './tauri/package-lock.json'
+          cache-dependency-path: './desktop/package-lock.json'
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -32,10 +32,10 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: './tauri/src-tauri -> target'
+          workspaces: './desktop/src-tauri -> target'
 
       - name: Install frontend dependencies
-        working-directory: ./tauri
+        working-directory: ./desktop
         run: npm ci
 
       - name: Build and Release Tauri app
@@ -45,10 +45,10 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          projectPath: ./tauri
+          projectPath: ./desktop
           tagName: ${{ github.ref_name }}
           releaseName: '影刀账号管理工具 ${{ github.ref_name }}'
-          releaseBody: '查看更新内容请参阅 [更新日志](https://github.com/ethan-010203/yingdao/blob/main/CHANGELOG.md)。'
+          releaseBody: '查看项目说明请参阅 [桌面端文档](https://github.com/ethan-010203/yingdao/blob/main/desktop/README.md)。'
           releaseDraft: false
           prerelease: false
           includeUpdaterJson: true
